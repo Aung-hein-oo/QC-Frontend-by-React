@@ -37,7 +37,8 @@ export const useAttendance = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         const attData = await attRes.json();
-        let allAttendance: AttendanceRecord[] = Array.isArray(attData) ? attData : attData.data || [];
+        const rawAttendance = Array.isArray(attData) ? attData : attData.data || [];
+        const allAttendance: AttendanceRecord[] = rawAttendance.map((record: any) => ({...record, staff_name: record.staff?.staff_name || 'Unknown'}));
         
         // Filter based on position scope
         const scope = getScope(current.staff_position);

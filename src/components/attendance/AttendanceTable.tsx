@@ -31,7 +31,7 @@ export const AttendanceTable = ({ attendance, showStaffInfo, itemsPerPage: initi
   
   const filteredAttendance = attendance.filter(record => {
     if (filters.staff_id && !record.staff_id?.toLowerCase().includes(filters.staff_id.toLowerCase())) return false;
-    if (filters.staff_name && !record.staff_name?.toLowerCase().includes(filters.staff_name.toLowerCase())) return false;
+    if (filters.staff_name && !record.staff?.staff_name?.toLowerCase().includes(filters.staff_name.toLowerCase())) return false;
     if (filters.date && !record.date.includes(filters.date)) return false;
     if (filters.attendance_status && record.attendance_status !== filters.attendance_status) return false;
     if (filters.attendance_type && !record.attendance_type?.toLowerCase().includes(filters.attendance_type.toLowerCase())) return false;
@@ -233,7 +233,7 @@ export const AttendanceTable = ({ attendance, showStaffInfo, itemsPerPage: initi
               currentItems.map(record => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   {showStaffInfo && <td className="px-6 py-4 text-sm font-mono">{record.staff_id}</td>}
-                  {showStaffInfo && <td className="px-6 py-4 text-sm font-mono">{record.staff_name}</td>}
+                  {showStaffInfo && <td className="px-6 py-4 text-sm font-mono">{record.staff?.staff_name}</td>}
                   <td className="px-6 py-4 text-sm">{record.date}</td>
                   <td className="px-6 py-4"><StatusBadge status={record.attendance_status} /></td>
                   <td className="px-6 py-4 text-sm">{record.attendance_type || '-'}</td>

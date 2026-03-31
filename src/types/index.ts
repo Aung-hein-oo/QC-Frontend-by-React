@@ -12,11 +12,14 @@ export type StaffData = {
 export type AttendanceRecord = {
   id: number;
   staff_id: string;
-  staff_name: string;
   date: string;
   attendance_status: string;
   attendance_type?: string;
   remark?: string;
+  staff?: {
+    staff_name: string;
+    staff_position: string;
+  };
 };
 
 export interface StaffMember {
