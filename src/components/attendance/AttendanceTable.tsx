@@ -1,13 +1,18 @@
 import { useState } from 'react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { AttendanceRecord } from '../../types';
-import { StatusBadge } from './StatusBadge';
-import { X } from 'lucide-react';
 import { Pagination } from '../common/Pagination';
+import { useNotification } from '../common/Notification';
+import { config } from '../../utils/config';
+import { AttendanceTableHeader } from './AttendanceTableHeader';
+import { StatusUpdateDropdown } from './StatusUpdateDropdown';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
   showStaffInfo: boolean;
   itemsPerPage?: number;
+  isAdmin?: boolean;
+  onStatusUpdate?: () => void;
 };
 
 type FilterState = {
@@ -19,225 +24,190 @@ type FilterState = {
   remark?: string;
 };
 
-export const AttendanceTable = ({ attendance, showStaffInfo, itemsPerPage: initialItemsPerPage = 25 }: AttendanceTableProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
-  const [filters, setFilters] = useState<FilterState>({});
+// Helper component for remark cell
+const RemarkCell = ({ remark }: { remark: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const maxLength = 50;
+  const needsTruncation = remark && remark.length > maxLength;
   
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-  
-  const filteredAttendance = attendance.filter(record => {
-    if (filters.staff_id && !record.staff_id?.toLowerCase().includes(filters.staff_id.toLowerCase())) return false;
-    if (filters.staff_name && !record.staff?.staff_name?.toLowerCase().includes(filters.staff_name.toLowerCase())) return false;
-    if (filters.date && !record.date.includes(filters.date)) return false;
-    if (filters.attendance_status && record.attendance_status !== filters.attendance_status) return false;
-    if (filters.attendance_type && !record.attendance_type?.toLowerCase().includes(filters.attendance_type.toLowerCase())) return false;
-    if (filters.remark && !record.remark?.toLowerCase().includes(filters.remark.toLowerCase())) return false;
-    return true;
-  });
-  
-  const totalItems = filteredAttendance.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredAttendance.slice(startIndex, startIndex + itemsPerPage);
-  
-  const goToPage = (page: number) => setCurrentPage(page);
-  
-  const handleFilterChange = (column: string, value: string) => {
-    setFilters(prev => ({ ...prev, [column]: value || undefined }));
-    setCurrentPage(1);
-  };
-  
-  const clearFilter = (column: string) => {
-    setFilters(prev => ({ ...prev, [column]: undefined }));
-    setCurrentPage(1);
-  };
-  
-  const clearAllFilters = () => {
-    setFilters({});
-    setCurrentPage(1);
-  };
-  
-  const hasActiveFilters = Object.values(filters).some(Boolean);
-  
-  if (attendance.length === 0) {
-    return <div className="text-center py-12 text-gray-500">No attendance records found</div>;
+  if (!remark || remark === '-') {
+    return <span className="text-gray-400">-</span>;
   }
   
   return (
-    <div>
-      {hasActiveFilters && (
-        <div className="flex justify-end mb-4">
+    <div className="flex items-start gap-2">
+      <div className="flex-1">
+        <span className="text-sm text-gray-600 break-words">
+          {expanded ? remark : `${remark.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
+        </span>
+      </div>
+      {needsTruncation && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1 transition-colors"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp size={14} />
+              <span>See less</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown size={14} />
+              <span>See more</span>
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
+
+export const AttendanceTable = ({ 
+  attendance, 
+  showStaffInfo, 
+  itemsPerPage: initialItemsPerPage = 25,
+  isAdmin = false,
+  onStatusUpdate 
+}: AttendanceTableProps) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialItemsPerPage);
+  const [filters, setFilters] = useState<FilterState>({});
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const { showNotification } = useNotification();
+
+  // Filter records
+  const filteredRecords = attendance.filter(record => {
+    return Object.entries(filters).every(([key, value]) => {
+      if (!value) return true;
+      if (key === 'attendance_status') return record.attendance_status === value;
+      if (key === 'date') return record.date.includes(value);
+      if (key === 'staff_id') return record.staff_id?.toLowerCase().includes(value.toLowerCase());
+      if (key === 'staff_name') return record.staff?.staff_name?.toLowerCase().includes(value.toLowerCase());
+      if (key === 'attendance_type') return record.attendance_type?.toLowerCase().includes(value.toLowerCase());
+      if (key === 'remark') return record.remark?.toLowerCase().includes(value.toLowerCase());
+      return true;
+    });
+  });
+
+  // Pagination
+  const totalItems = filteredRecords.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginatedRecords = filteredRecords.slice((page - 1) * pageSize, page * pageSize);
+
+  // Filter handlers
+  const setFilter = (column: string, value: string) => {
+    setFilters(prev => ({ ...prev, [column]: value || undefined }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setPage(1);
+  };
+
+  const hasFilters = Object.values(filters).some(Boolean);
+
+  // Status update handler
+  const updateStatus = async (recordId: string, newStatus: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showNotification('Please login to continue.', 'error');
+      return;
+    }
+
+    setUpdatingId(recordId);
+    
+    try {
+      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attendance_status: newStatus }),
+      });
+
+      if (response.ok) {
+        showNotification(`✓ Status updated to "${newStatus}"`, 'success');
+        await onStatusUpdate?.();
+        setOpenDropdownId(null);
+      } else {
+        const error = await response.json();
+        showNotification(error.message || 'Failed to update status', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to update status. Please try again.', 'error');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  if (!attendance.length) {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <div className="text-4xl mb-2">📋</div>
+        <div className="text-gray-500">No attendance records found</div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      {hasFilters && (
+        <div className="flex justify-end">
           <button
-            onClick={clearAllFilters}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg"
+            onClick={clearFilters}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             <X size={16} />
-            Reset
+            Reset Filters
           </button>
         </div>
       )}
       
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              {showStaffInfo && (
-                <th className="px-6 py-4 text-left text-sm font-semibold">
-                  <div className="flex flex-col gap-2">
-                    <span>Staff ID</span>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={filters.staff_id || ''}
-                        onChange={(e) => handleFilterChange('staff_id', e.target.value)}
-                        className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                      {filters.staff_id && (
-                        <button
-                          onClick={() => clearFilter('staff_id')}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          <X size={12} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </th>
-              )}
-              {showStaffInfo && (
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                <div className="flex flex-col gap-2">
-                  <span>Name</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.staff_name || ''}
-                      onChange={(e) => handleFilterChange('staff_name', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    {filters.staff_name && (
-                      <button
-                        onClick={() => clearFilter('staff_name')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              )}
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                <div className="flex flex-col gap-2">
-                  <span>Date</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.date || ''}
-                      onChange={(e) => handleFilterChange('date', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    {filters.date && (
-                      <button
-                        onClick={() => clearFilter('date')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                <div className="flex flex-col gap-2">
-                  <span>Status</span>
-                  <div className="relative">
-                    <select
-                      value={filters.attendance_status || ''}
-                      onChange={(e) => handleFilterChange('attendance_status', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                    >
-                      <option value="">All</option>
-                      <option value="Present">Present</option>
-                      <option value="Half Leave">Half Leave</option>
-                      <option value="Leave">Leave</option>
-                      <option value="Absence">Absence</option>
-                    </select>
-                    {filters.attendance_status && (
-                      <button
-                        onClick={() => clearFilter('attendance_status')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                <div className="flex flex-col gap-2">
-                  <span>Type</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.attendance_type || ''}
-                      onChange={(e) => handleFilterChange('attendance_type', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    {filters.attendance_type && (
-                      <button
-                        onClick={() => clearFilter('attendance_type')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">
-                <div className="flex flex-col gap-2">
-                  <span>Remark</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.remark || ''}
-                      onChange={(e) => handleFilterChange('remark', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    {filters.remark && (
-                      <button
-                        onClick={() => clearFilter('remark')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {currentItems.length === 0 ? (
+          <AttendanceTableHeader
+            showStaffInfo={showStaffInfo}
+            filters={filters}
+            onFilterChange={setFilter}
+            onClearFilter={(col) => setFilter(col, '')}
+          />
+          
+          <tbody className="divide-y divide-gray-100">
+            {!paginatedRecords.length ? (
               <tr>
-                <td colSpan={showStaffInfo ? 5 : 4} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={showStaffInfo ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
                   No matching records found
                 </td>
               </tr>
             ) : (
-              currentItems.map(record => (
-                <tr key={record.id} className="hover:bg-gray-50">
-                  {showStaffInfo && <td className="px-6 py-4 text-sm font-mono">{record.staff_id}</td>}
-                  {showStaffInfo && <td className="px-6 py-4 text-sm font-mono">{record.staff?.staff_name}</td>}
-                  <td className="px-6 py-4 text-sm">{record.date}</td>
-                  <td className="px-6 py-4"><StatusBadge status={record.attendance_status} /></td>
-                  <td className="px-6 py-4 text-sm">{record.attendance_type || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{record.remark || '-'}</td>
+              paginatedRecords.map((record) => (
+                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                  {showStaffInfo && (
+                    <>
+                      <td className="px-6 py-3 text-sm font-mono text-gray-600">{record.staff_id}</td>
+                      <td className="px-6 py-3 text-sm font-medium text-gray-800">{record.staff?.staff_name}</td>
+                    </>
+                  )}
+                  <td className="px-6 py-3 text-sm text-gray-600">{record.date}</td>
+                  <td className="px-6 py-3">
+                    <StatusUpdateDropdown
+                      recordId={String(record.id)}
+                      currentStatus={record.attendance_status}
+                      isAdmin={isAdmin}
+                      isUpdating={updatingId === String(record.id)}
+                      showDropdown={openDropdownId === String(record.id)}
+                      onStatusClick={(id) => setOpenDropdownId(openDropdownId === id ? null : id)}
+                      onStatusConfirm={updateStatus}
+                    />
+                  </td>
+                  <td className="px-6 py-3 text-sm text-gray-600">{record.attendance_type || '-'}</td>
+                  <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
+                    <RemarkCell remark={record.remark || '-'} />
+                  </td>
                 </tr>
               ))
             )}
@@ -247,15 +217,18 @@ export const AttendanceTable = ({ attendance, showStaffInfo, itemsPerPage: initi
       
       {attendance.length > 0 && (
         <Pagination
-          currentPage={currentPage}
+          currentPage={page}
           totalPages={totalPages}
           totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          startIndex={startIndex}
-          onPageChange={goToPage}
-          onItemsPerPageChange={handleItemsPerPageChange}
-          showFilteredBadge={true}
-          isFiltered={hasActiveFilters}
+          itemsPerPage={pageSize}
+          startIndex={(page - 1) * pageSize}
+          onPageChange={setPage}
+          onItemsPerPageChange={(size) => {
+            setPageSize(size);
+            setPage(1);
+          }}
+          showFilteredBadge
+          isFiltered={hasFilters}
         />
       )}
     </div>

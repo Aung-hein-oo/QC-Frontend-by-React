@@ -1,28 +1,84 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/LoginPage';
 import AttendanceHomepage from './pages/AttendanceHomepage';
 import UserProfile from './pages/UserProfile';
 import LeaveRequest from './pages/LeaveRequest';
 import AdminDashboard from './pages/AdminDashboard';
+import { NotificationProvider, useNotification } from './components/common/Notification';
+import ChangePassword from './pages/ChangePassword';
+import LeaveApprove from './pages/LeaveApprove';
 
-// Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Protected Route Component with role checking using localStorage
+const ProtectedRoute: React.FC<{ 
+  children: React.ReactNode;
+  requiredPosition?: string | string[];
+}> = ({ children, requiredPosition }) => {
   const token = localStorage.getItem('token');
+  const location = useLocation();
+  const { showNotification } = useNotification();
+  
+  // Get user from localStorage
+  let user = null;
+  try {
+    const storedStaff = localStorage.getItem('staff');
+    if (storedStaff) {
+      user = JSON.parse(storedStaff);
+    }
+  } catch (error) {
+    console.error('Error parsing staff data:', error);
+  }
   
   if (!token) {
-    return <Navigate to="/" replace />;
+    showNotification('Please login to access this page.', 'warning');
+    // Save the attempted URL for redirecting after login
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+  
+  // Check if route requires specific position
+  if (requiredPosition) {
+    const positions = Array.isArray(requiredPosition) ? requiredPosition : [requiredPosition];
+    const hasRequiredPosition = positions.includes(user?.staff_position);
+    
+    if (!hasRequiredPosition) {
+      showNotification(
+        `Access Denied: ${user?.staff_position || 'User'} do not have permission to access this page.`,
+        'error'
+      );
+      return <Navigate to="/dashboard" replace />;
+    }
   }
   
   return <>{children}</>;
 };
 
-function App() {
+// Public Route Component - Redirects to dashboard if already logged in
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
+  
+  if (token) {
+    // Redirect to the page they were trying to access, or dashboard
+    return <Navigate to={from} replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+function AppContent() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login Route */}
-        <Route path="/" element={<Login />} />
+        {/* Login Route - Redirects to dashboard if already logged in */}
+        <Route 
+          path="/" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
         
         {/* Dashboard Route (Protected) */}
         <Route
@@ -33,7 +89,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-          <Route 
+        
+        <Route 
           path="/user_profile"
           element={
             <ProtectedRoute>
@@ -41,6 +98,7 @@ function App() {
             </ProtectedRoute>
           }  
         />
+        
         <Route
           path="/leave"
           element={
@@ -49,19 +107,47 @@ function App() {
             </ProtectedRoute>
           }
         />
+        
+        <Route
+          path="/change_password"
+          element={
+            <ProtectedRoute>
+              <ChangePassword />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/leave_approve"
+          element={
+            <ProtectedRoute>
+              <LeaveApprove />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Admin Route - Only accessible by Admin users */}
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredPosition="Admin">
               <AdminDashboard />
             </ProtectedRoute>
           }
         />
         
-        {/* Redirect any unknown routes to login */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Redirect any unknown routes to dashboard */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 }
 

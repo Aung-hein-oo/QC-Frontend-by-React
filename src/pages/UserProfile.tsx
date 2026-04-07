@@ -1,9 +1,14 @@
-import { Calendar, User } from 'lucide-react';
-import { CheckCircle, Clock, XCircle, ArrowLeft, FileText } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, ArrowLeft, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from "react"
+import { useAttendance } from '../hooks/useAttendance';
+import CalendarPicker from '../components/attendance/CalendarPicker';
+import Header from '../components/attendance/Header';
 
 const UserProfile: React.FC = () => {
     const navigate = useNavigate();
+    const { staff } = useAttendance();
+    const [image, setImage] = useState<string | null>(null);
 
     const StatCard = ({ label, value, color, icon: Icon }: any) => (
         <div className="bg-white rounded-xl border p-5">
@@ -18,35 +23,15 @@ const UserProfile: React.FC = () => {
             </div>
         </div>
     );
-
-    //   const handleLeaveRequest = () => {
-    //     navigate('/leave');
-    //   };
+    if (!staff) return null;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300">
 
             {/* HEADER */}
             <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-
-                    <div className="flex items-center gap-2">
-                        <Calendar className="text-blue-600" size={28} />
-                        <h1 className="text-xl font-semibold">AMS</h1>
-                        <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                            Employee
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                        <User size={18} />
-                        <span className="font-medium">Nway</span>
-                        <span className="text-xs text-slate-400">26-00318</span>
-                    </div>
-
-                </div>
+                <Header />
             </header>
-
             {/* MAIN */}
             <main className="max-w-7xl mx-auto px-4 py-6">
                 {/* Back Button */}
@@ -62,63 +47,96 @@ const UserProfile: React.FC = () => {
                         Back to Dashboard
                     </button>
 
-                    {/* RIGHT: Action Buttons */}
-                    <div className="flex gap-3">
-                        <button onClick={() => navigate('/leave')}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium">
-                            <FileText size={16} />
-                            Leave Request
-                        </button>
-                    </div>
+                    {/* Date Picker */}
+                    <CalendarPicker />
 
                 </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
                     {/* LEFT PROFILE */}
                     <div className="lg:col-span-3 flex justify-center">
                         <div className="bg-white p-6 rounded-xl shadow-sm w-full max-w-sm mx-auto">
-
                             {/* Profile Image */}
                             <div className="flex flex-col items-center">
-                                {/* <div className="w-28 h-28 bg-gray-200 rounded-full flex items-center justify-center mb-3">
-                                    <span className="text-gray-500 text-sm">Photo</span>
-                                </div> */}
-                                <img
-                                    src="/female.jpg"
-                                    alt="Profile"
-                                    className="w-28 h-28 rounded-full object-cover mb-3"
-                                />
-                                <h2 className="text-lg font-semibold text-slate-800">
-                                    Nway Nandar Myint
-                                </h2>
-                                <p className="text-sm text-slate-500">Programmer</p>
-                            </div>
+                                <div className="relative">
+                                    <img
+                                        src={
+                                            image
+                                                ? image
+                                                : staff.staff_id?.startsWith("25")
+                                                    ? "/male.png"
+                                                    : "/female.jpg"
+                                        }
+                                        alt="Profile"
+                                        className="w-33 h-33 rounded-full object-cover mb-3 border-2 border-black-500"
+                                    />
+                                    {/* Edit Icon */}
+                                    <label className="absolute bottom-3 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700">
+                                        <Pencil size={14} />
+                                        <input
+                                            type="file"
+                                            accept=".png, .jpg, .jpeg"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
 
+                                                if (file && ["image/png", "image/jpeg"].includes(file.type)) {
+                                                    const preview = URL.createObjectURL(file);
+                                                    setImage(preview);
+                                                } else {
+                                                    alert("Only PNG and JPG files are allowed");
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                                <h2 className="text-lg font-semibold text-slate-800">
+                                    {staff.staff_name}
+                                </h2>
+                                <p className="text-sm text-slate-500">{staff.staff_position}</p>
+                            </div>
                             {/* Divider */}
                             <div className="border-t my-4"></div>
-
                             {/* Staff Info */}
-                            <div className="text-sm space-y-3">
+                            <div className="text-sm space-y-2">
 
-                                <div className="flex justify-between">
+                                <div className="grid grid-cols-[120px_10px_1fr]">
                                     <span className="text-slate-500">Staff No</span>
-                                    <span className="font-medium text-slate-800">26-00318</span>
+                                    <span>:</span>
+                                    <span className="font-medium text-slate-800">{staff.staff_id}</span>
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Department</span>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <span className="text-slate-500">Team</span>
+                                    <span>:</span>
                                     <span className="font-medium text-slate-800">MODOS</span>
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Service Year</span>
-                                    <span className="font-medium text-slate-800">1 year</span>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <span className="text-slate-500">Department</span>
+                                    <span>:</span>
+                                    <span className="font-medium text-slate-800 break-words">
+                                        Offshore Department Devision-2
+                                    </span>
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <span className="text-slate-500">Appointment Date</span>
-                                    <span className="font-medium text-slate-800">15/08/2024</span>
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <span className="text-slate-500">Gender</span>
+                                    <span>:</span>
+                                    <span className="font-medium text-slate-800">Female</span>
+                                </div>
+
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <span className="text-slate-500">Floor</span>
+                                    <span>:</span>
+                                    <span className="font-medium text-slate-800">3rd</span>
+                                </div>
+
+                                <div className="grid grid-cols-[120px_10px_1fr]">
+                                    <span className="text-slate-500">Mail</span>
+                                    <span>:</span>
+                                    <span className="font-medium text-slate-800 min-w-0 break-words">
+                                        nwaynandarmyint@dirace.com
+                                    </span>
                                 </div>
 
                             </div>
@@ -175,6 +193,14 @@ const UserProfile: React.FC = () => {
                                         </tr>
 
                                         <tr className="border-t">
+                                            <td className="p-2">Family Funeral or Health Care Leave</td>
+                                            <td className="text-center">0</td>
+                                            <td className="text-center">5.8</td>
+                                            <td className="text-center">0</td>
+                                            <td className="text-center">5.8</td>
+                                        </tr>
+
+                                        <tr className="border-t">
                                             <td className="p-2">Medical Leave</td>
                                             <td className="text-center">0</td>
                                             <td className="text-center">30</td>
@@ -189,7 +215,9 @@ const UserProfile: React.FC = () => {
                                             <td className="text-center">30</td>
                                         </tr>
                                         <tr className="border-t">
-                                            <td className="p-2">Maternity Leave</td>
+                                            <td className="p-2">
+                                                {staff.staff_id?.startsWith("25") ? "Paternity Leave" : "Maternity Leave"}
+                                            </td>
                                             <td className="text-center">0</td>
                                             <td className="text-center">30</td>
                                             <td className="text-center">0</td>
@@ -202,8 +230,14 @@ const UserProfile: React.FC = () => {
                                             <td className="text-center">0</td>
                                             <td className="text-center">30</td>
                                         </tr>
+                                        <tr className="border-t">
+                                            <td className="p-2">Leave Without Pay</td>
+                                            <td className="text-center">0</td>
+                                            <td className="text-center">30</td>
+                                            <td className="text-center">0</td>
+                                            <td className="text-center">30</td>
+                                        </tr>
                                     </tbody>
-
                                 </table>
                             </div>
                         </div>

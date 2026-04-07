@@ -1,16 +1,20 @@
 import React from 'react';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useStaffManagement } from '../hooks/useStaffManagement';
 import AdminHeader from '../components/admin/AdminHeader';
 import StaffTable from '../components/admin/StaffTable';
 import StaffModal from '../components/admin/StaffModal';
-import ActionsBar from '../components/admin/ActionsBar';
 import ViewStaffModal from '../components/admin/ViewStaffModal';
+import { useNotification } from '../components/common/Notification';
 
 const AdminDashboard: React.FC = () => {
-//   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { showNotification } = useNotification();
   const {
     staffList,
+    divisions,
+    departments,
+    teams,
     loading,
     showModal,
     showViewModal,
@@ -19,6 +23,8 @@ const AdminDashboard: React.FC = () => {
     isSubmitting,
     generatedStaffId,
     updateGeneratedStaffId,
+    fetchDepartmentsByDivision,
+    fetchTeamsByDepartment,
     addStaff,
     updateStaff,
     deleteStaff,
@@ -27,6 +33,45 @@ const AdminDashboard: React.FC = () => {
     openViewModal,
     closeModals,
   } = useStaffManagement();
+
+  // Get current user from localStorage
+  const getStoredUser = React.useCallback(() => {
+    try {
+      const storedStaff = localStorage.getItem('staff');
+      if (storedStaff) {
+        return JSON.parse(storedStaff);
+      }
+    } catch (error) {
+      console.error('Error parsing staff data:', error);
+    }
+    return null;
+  }, []);
+
+  const currentUser = getStoredUser();
+  const isAdmin = currentUser?.staff_position === 'Admin';
+
+  // Redirect non-admin users
+  React.useEffect(() => {
+    if (!loading) {
+      // Check token first
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showNotification('Please login to access the admin dashboard.', 'error');
+        setTimeout(() => navigate('/'), 1500);
+        return;
+      }
+
+      // Then check if user is admin
+      if (!isAdmin) {
+        showNotification(
+          `Access Denied: ${currentUser?.staff_position || 'User'} users do not have permission to access the admin dashboard.`,
+          'error'
+        );
+        setTimeout(() => navigate('/dashboard'), 1500);
+        return;
+      }
+    }
+  }, [isAdmin, currentUser, loading, navigate, showNotification]);
 
   const handleSubmit = async (formData: any) => {
     if (editingStaff) {
@@ -37,13 +82,26 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleExcelImport = () => {
-    alert('Excel import functionality will be implemented soon');
+    showNotification('Excel import functionality will be implemented soon', 'info');
   };
 
   const handleExcelExport = () => {
-    alert('Excel export functionality will be implemented soon');
+    showNotification('Excel export functionality will be implemented soon', 'info');
   };
 
+    const handleHolidayImport = () => {
+    showNotification('Holiday import functionality will be implemented soon', 'info');
+  };
+
+  const handleDivisionChange = async (divisionId: number) => {
+    await fetchDepartmentsByDivision(divisionId);
+  };
+
+  const handleDepartmentChange = async (departmentId: number) => {
+    await fetchTeamsByDepartment(departmentId);
+  };
+
+  // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-cyan-100/30 to-cyan-50 flex items-center justify-center">
@@ -55,19 +113,22 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
+  // Don't render anything if not authenticated or not admin (redirect will happen in useEffect)
+  if (!currentUser || !isAdmin) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-300 via-teal-300 to-teal-300">
-      <AdminHeader />
+      <AdminHeader 
+        onAddStaff={openAddModal}
+        onImportExcel={handleExcelImport}
+        onExportExcel={handleExcelExport}
+        onAddHoliday={handleHolidayImport}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Actions Bar - Now above the table */}
-        <ActionsBar 
-          onAddStaff={openAddModal}
-          onImportExcel={handleExcelImport}
-          onExportExcel={handleExcelExport}
-        />
-
-        {/* Staff Table */}
+        {/* Staff Table - Removed ActionsBar since actions are now in header */}
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
           <StaffTable 
             staffList={staffList}
@@ -82,14 +143,19 @@ const AdminDashboard: React.FC = () => {
         </div>
       </main>
 
-      <StaffModal 
+      <StaffModal
         isOpen={showModal}
         editingStaff={editingStaff}
         isSubmitting={isSubmitting}
         generatedStaffId={generatedStaffId}
+        divisions={divisions}
+        departments={departments}
+        teams={teams}
         onClose={closeModals}
         onSubmit={handleSubmit}
         onGenderChange={updateGeneratedStaffId}
+        onDivisionChange={handleDivisionChange}
+        onDepartmentChange={handleDepartmentChange}
       />
 
       <ViewStaffModal 

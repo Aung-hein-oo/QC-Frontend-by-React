@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { User, Eye, Edit, Trash2, X } from 'lucide-react';
 import { StaffMember } from '../../types';
 import { Pagination } from '../common/Pagination';
@@ -19,6 +19,24 @@ type FilterState = {
   team?: string;
 };
 
+const filterableColumns: (keyof FilterState)[] = ['staff_id', 'staff_name', 'staff_position', 'staff_mail', 'team'];
+
+// Helper function to check if ID has special prefix
+const hasSpecialPrefix = (staffId: string): boolean => {
+  return staffId?.startsWith('25-') || staffId?.startsWith('26-');
+};
+
+// Helper function to extract numeric value for sorting
+const getSortableId = (staffId: string): number => {
+  if (staffId?.startsWith('25-')) {
+    return parseInt(staffId.substring(3), 10) + 1000000; // Push 25- IDs to the end
+  }
+  if (staffId?.startsWith('26-')) {
+    return parseInt(staffId.substring(3), 10) + 2000000; // Push 26- IDs further to the end
+  }
+  return parseInt(staffId, 10) || 0;
+};
+
 const StaffTable: React.FC<StaffTableProps> = ({ 
   staffList, 
   onView, 
@@ -29,45 +47,73 @@ const StaffTable: React.FC<StaffTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   const [filters, setFilters] = useState<FilterState>({});
-  
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-  
-  const filteredStaff = staffList.filter(staff => {
-    if (filters.staff_id && !staff.staff_id?.toLowerCase().includes(filters.staff_id.toLowerCase())) return false;
-    if (filters.staff_name && !staff.staff_name?.toLowerCase().includes(filters.staff_name.toLowerCase())) return false;
-    if (filters.staff_position && !staff.staff_position?.toLowerCase().includes(filters.staff_position.toLowerCase())) return false;
-    if (filters.staff_mail && !staff.staff_mail?.toLowerCase().includes(filters.staff_mail.toLowerCase())) return false;
-    if (filters.team && !staff.team?.toLowerCase().includes(filters.team.toLowerCase())) return false;
-    return true;
-  });
-  
-  const totalItems = filteredStaff.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredStaff.slice(startIndex, startIndex + itemsPerPage);
-  
-  const goToPage = (page: number) => setCurrentPage(page);
-  
-  const handleFilterChange = (column: string, value: string) => {
+
+  // Memoized filtered and sorted data
+  const processedStaff = useMemo(() => {
+    // Apply filters
+    const filtered = staffList.filter(staff => {
+      if (filters.staff_id && !staff.staff_id?.toLowerCase().includes(filters.staff_id.toLowerCase())) return false;
+      if (filters.staff_name && !staff.staff_name?.toLowerCase().includes(filters.staff_name.toLowerCase())) return false;
+      if (filters.staff_position && !staff.staff_position?.toLowerCase().includes(filters.staff_position.toLowerCase())) return false;
+      if (filters.staff_mail && !staff.staff_mail?.toLowerCase().includes(filters.staff_mail.toLowerCase())) return false;
+      if (filters.team && !staff.team?.team_name?.toLowerCase().includes(filters.team.toLowerCase())) return false;
+      return true;
+    });
+
+    // Apply sorting: team alphabetically, then staff ID with special handling for 25- and 26-
+    return [...filtered].sort((a, b) => {
+      // First sort by team
+      const teamCompare = (a.team?.team_name || '').localeCompare(b.team?.team_name || '');
+      if (teamCompare !== 0) return teamCompare;
+      
+      // Then sort by ID with special handling
+      const idA = a.staff_id || '';
+      const idB = b.staff_id || '';
+      
+      const hasSpecialA = hasSpecialPrefix(idA);
+      const hasSpecialB = hasSpecialPrefix(idB);
+      
+      // If one has special prefix and the other doesn't, special prefixes come last
+      if (hasSpecialA !== hasSpecialB) {
+        return hasSpecialA ? 1 : -1;
+      }
+      
+      // Both have special prefixes or both don't
+      if (hasSpecialA && hasSpecialB) {
+        // Extract the number after the prefix and compare
+        const numA = parseInt(idA.substring(3), 10);
+        const numB = parseInt(idB.substring(3), 10);
+        return numA - numB;
+      }
+      
+      // Regular numeric sorting for IDs without prefixes
+      const numA = parseInt(idA, 10);
+      const numB = parseInt(idB, 10);
+      return isNaN(numA) || isNaN(numB) 
+        ? idA.localeCompare(idB)
+        : numA - numB;
+    });
+  }, [staffList, filters]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(processedStaff.length / itemsPerPage);
+  const paginatedStaff = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return processedStaff.slice(start, start + itemsPerPage);
+  }, [processedStaff, currentPage, itemsPerPage]);
+
+  const hasActiveFilters = Object.values(filters).some(Boolean);
+
+  const handleFilterChange = (column: keyof FilterState, value: string) => {
     setFilters(prev => ({ ...prev, [column]: value || undefined }));
     setCurrentPage(1);
   };
-  
-  const clearFilter = (column: string) => {
-    setFilters(prev => ({ ...prev, [column]: undefined }));
-    setCurrentPage(1);
-  };
-  
+
   const clearAllFilters = () => {
     setFilters({});
     setCurrentPage(1);
   };
-  
-  const hasActiveFilters = Object.values(filters).some(Boolean);
-  
+
   if (staffList.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -94,124 +140,42 @@ const StaffTable: React.FC<StaffTableProps> = ({
         <table className="w-full text-sm">
           <thead className="bg-gradient-to-r from-white-600 to-white-700 text-black">
             <tr>
-              <th className="p-3 text-left">
-                <div className="flex flex-col gap-2">
-                  <span>Staff ID</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.staff_id || ''}
-                      onChange={(e) => handleFilterChange('staff_id', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
-                    />
-                    {filters.staff_id && (
-                      <button
-                        onClick={() => clearFilter('staff_id')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
+              {filterableColumns.map(column => (
+                <th key={column} className="p-3 text-left">
+                  <div className="flex flex-col gap-2">
+                    <span>{column.replace('staff_', '').replace('_', ' ').toUpperCase()}</span>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={filters[column] || ''}
+                        onChange={(e) => handleFilterChange(column, e.target.value)}
+                        className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
+                      />
+                      {filters[column] && (
+                        <button
+                          onClick={() => handleFilterChange(column, '')}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </th>
-              <th className="p-3 text-left">
-                <div className="flex flex-col gap-2">
-                  <span>Name</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.staff_name || ''}
-                      onChange={(e) => handleFilterChange('staff_name', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
-                    />
-                    {filters.staff_name && (
-                      <button
-                        onClick={() => clearFilter('staff_name')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="p-3 text-left">
-                <div className="flex flex-col gap-2">
-                  <span>Position</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.staff_position || ''}
-                      onChange={(e) => handleFilterChange('staff_position', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
-                    />
-                    {filters.staff_position && (
-                      <button
-                        onClick={() => clearFilter('staff_position')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="p-3 text-left">
-                <div className="flex flex-col gap-2">
-                  <span>Email</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.staff_mail || ''}
-                      onChange={(e) => handleFilterChange('staff_mail', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
-                    />
-                    {filters.staff_mail && (
-                      <button
-                        onClick={() => clearFilter('staff_mail')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
-              <th className="p-3 text-left">
-                <div className="flex flex-col gap-2">
-                  <span>Team</span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={filters.team || ''}
-                      onChange={(e) => handleFilterChange('team', e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-700"
-                    />
-                    {filters.team && (
-                      <button
-                        onClick={() => clearFilter('team')}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </th>
+                </th>
+              ))}
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {currentItems.length === 0 ? (
+            {paginatedStaff.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-gray-500">
                   No matching staff members found
                 </td>
               </tr>
             ) : (
-              currentItems.map((staff, index) => (
-                <tr key={staff.staff_id} className={`border-t ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50`}>
+              paginatedStaff.map((staff, index) => (
+                <tr key={staff.id} className={`border-t ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50`}>
                   <td className="p-3 font-medium">{staff.staff_id}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -220,33 +184,15 @@ const StaffTable: React.FC<StaffTableProps> = ({
                       </div>
                       <span>{staff.staff_name}</span>
                     </div>
-                  </td>
+                   </td>
                   <td className="p-3">{staff.staff_position}</td>
                   <td className="p-3">{staff.staff_mail}</td>
-                  <td className="p-3">{staff.team || '-'}</td>
+                  <td className="p-3">{staff.team?.team_name || '-'}</td>
                   <td className="p-3">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => onView(staff)}
-                        className="p-1.5 text-green-600 hover:bg-green-100 rounded"
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => onEdit(staff)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-100 rounded"
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(staff.staff_id)}
-                        className="p-1.5 text-red-600 hover:bg-red-100 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <ActionButton icon={Eye} onClick={() => onView(staff)} color="green" title="View Details" />
+                      <ActionButton icon={Edit} onClick={() => onEdit(staff)} color="blue" title="Edit" />
+                      <ActionButton icon={Trash2} onClick={() => onDelete(staff.staff_id)} color="red" title="Delete" />
                     </div>
                   </td>
                 </tr>
@@ -260,11 +206,14 @@ const StaffTable: React.FC<StaffTableProps> = ({
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          totalItems={totalItems}
+          totalItems={processedStaff.length}
           itemsPerPage={itemsPerPage}
-          startIndex={startIndex}
-          onPageChange={goToPage}
-          onItemsPerPageChange={handleItemsPerPageChange}
+          startIndex={(currentPage - 1) * itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(newSize) => {
+            setItemsPerPage(newSize);
+            setCurrentPage(1);
+          }}
           showFilteredBadge={true}
           isFiltered={hasActiveFilters}
         />
@@ -272,5 +221,21 @@ const StaffTable: React.FC<StaffTableProps> = ({
     </div>
   );
 };
+
+// Helper component for action buttons
+const ActionButton: React.FC<{
+  icon: React.ElementType;
+  onClick: () => void;
+  color: string;
+  title: string;
+}> = ({ icon: Icon, onClick, color, title }) => (
+  <button
+    onClick={onClick}
+    className={`p-1.5 text-${color}-600 hover:bg-${color}-100 rounded`}
+    title={title}
+  >
+    <Icon size={16} />
+  </button>
+);
 
 export default StaffTable;

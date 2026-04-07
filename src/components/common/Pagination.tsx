@@ -48,7 +48,6 @@ export const Pagination: React.FC<PaginationProps> = ({
         Showing <span className="font-medium">{totalItems === 0 ? 0 : startIndex + 1}</span> to{' '}
         <span className="font-medium">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of{' '}
         <span className="font-medium">{totalItems}</span> results
-        {showFilteredBadge && isFiltered && <span className="ml-2 text-blue-600">(filtered)</span>}
       </div>
 
       {totalPages > 1 && (

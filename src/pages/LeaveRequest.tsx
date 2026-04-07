@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, User, X, Send, AlertTriangle, Pencil } from 'lucide-react';
+import { ArrowLeft, X, Send, AlertTriangle, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+import { useAttendance } from '../hooks/useAttendance';
+import Header from '../components/attendance/Header';
 const API_URL = 'http://192.168.250.1:8065';
-
 const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 type LeaveModalType = {
     staff_id: string;
@@ -17,23 +17,10 @@ type LeaveModalType = {
     total_leave_day: number;
     apply_date: string,
 };
-
-// type LeaveBalance = {
-//     id:string;
-//     staff_id: string;
-//     cascual_leave: number;
-//     family_funeral_health_leave: number;
-//     leave_with_pay: number;
-//     leave_without_pay: number;
-//     married_leave: number;
-//     medical_leave: number;
-//     parternity_leave: number;
-//     maternity_leave: number;
-
-// };
-
 const LeaveRequest: React.FC = () => {
     const navigate = useNavigate();
+    const { staff } = useAttendance();
+
     //const [balance] = useState<LeaveBalance[]>([]);
     const [formData, setFormData] = useState<LeaveModalType>({
         staff_id: '',
@@ -175,21 +162,14 @@ const LeaveRequest: React.FC = () => {
         { value: 'medical', label: 'Medical Leave' }
     ];
 
+    if (!staff) return null;
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300">
 
             {/* HEADER */}
             <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
-                    <div onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
-                        <Calendar className="text-blue-600" size={28} />
-                        <h1 className="text-xl font-semibold">AMS</h1>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                        <User size={18} />
-                        <span>Nway Nandar</span>
-                    </div>
-                </div>
+                <Header />
             </header>
 
             <main className="max-w-7xl mx-auto px-4 py-6">
@@ -247,7 +227,8 @@ const LeaveRequest: React.FC = () => {
                                     <td className="px-6 py-4">Sick</td>
                                     <td className="px-6 py-4">Pending..</td>
                                     <td className="px-6 py-4">
-                                        <button className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm">
+                                        <button onClick={() => setShowUpdate(true)}
+                                            className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm">
                                             <Pencil size={16} />
                                             Edit
                                         </button>
@@ -266,7 +247,7 @@ const LeaveRequest: React.FC = () => {
                                     <td className="px-6 py-4">Pending..</td>
                                     <td className="px-6 py-4">
                                         <button onClick={() => setShowUpdate(true)}
-                                        className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm">
+                                            className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm">
                                             <Pencil size={16} />
                                             Edit
                                         </button>
