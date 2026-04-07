@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { StaffMember } from '../types';
+import { StaffMember, StaffFormData, Division, Department, Team } from '../types';
 import { config } from '../utils/config';
 
 export const useStaffManagement = () => {
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -22,26 +25,98 @@ export const useStaffManagement = () => {
       setStaffList(data);
     } catch (error) {
       console.error('Error fetching staff:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchDivisions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/division`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setDivisions(data);
+    } catch (error) {
+      console.error('Error fetching divisions:', error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/department`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setDepartments(data);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchTeams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/team`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setTeams(data);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+    }
+  };
+
+  // Fetch departments based on selected division
+  const fetchDepartmentsByDivision = async (divisionId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/department?division_id=${divisionId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setDepartments(data);
+    } catch (error) {
+      console.error('Error fetching departments by division:', error);
+    }
+  };
+
+  // Fetch teams based on selected department
+  const fetchTeamsByDepartment = async (departmentId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/team?department_id=${departmentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setTeams(data);
+    } catch (error) {
+      console.error('Error fetching teams by department:', error);
     }
   };
 
   useEffect(() => {
-    fetchStaffList();
+    const fetchAllData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchStaffList(),
+        fetchDivisions(),
+        fetchDepartments(),
+        fetchTeams(),
+      ]);
+      setLoading(false);
+    };
+    fetchAllData();
   }, []);
 
   // Function to generate the next staff ID based on gender
   const generateStaffId = (gender: string): string => {
-    // Get prefix based on gender: 25 for male, 26 for female
     const prefix = gender === 'Male' ? '25' : '26';
     
-    // Filter staff by gender prefix
     const sameGenderStaff = staffList.filter(staff => 
       staff.staff_id && staff.staff_id.startsWith(prefix)
     );
     
-    // Get all existing numbers for this gender
     const existingNumbers = sameGenderStaff
       .map(staff => {
         const match = staff.staff_id?.match(new RegExp(`^${prefix}-(\\d+)$`));
@@ -49,18 +124,15 @@ export const useStaffManagement = () => {
       })
       .filter(num => num > 0);
     
-    // Find the next number (max + 1, or 1 if no existing)
     const nextNumber = existingNumbers.length > 0 
       ? Math.max(...existingNumbers) + 1 
       : 1;
     
-    // Format with leading zeros (6 digits total after prefix)
     const formattedNumber = nextNumber.toString().padStart(5, '0');
     
     return `${prefix}-${formattedNumber}`;
   };
 
-  // Function to update staff ID when gender changes
   const updateGeneratedStaffId = (gender: string) => {
     if (gender && gender !== '') {
       const newStaffId = generateStaffId(gender);
@@ -70,10 +142,9 @@ export const useStaffManagement = () => {
     }
   };
 
-  const addStaff = async (formData: Partial<StaffMember>) => {
+  const addStaff = async (formData: StaffFormData) => {
     setIsSubmitting(true);
     try {
-      // Generate staff ID based on gender if not provided
       const staffData = {
         ...formData,
         staff_id: formData.staff_id || generatedStaffId,
@@ -109,7 +180,7 @@ export const useStaffManagement = () => {
     }
   };
 
-  const updateStaff = async (formData: Partial<StaffMember>, staffId: string) => {
+  const updateStaff = async (formData: StaffFormData, staffId: string) => {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
@@ -165,7 +236,7 @@ export const useStaffManagement = () => {
 
   const openAddModal = () => {
     setEditingStaff(null);
-    setGeneratedStaffId(''); // Clear generated ID
+    setGeneratedStaffId('');
     setShowModal(true);
   };
 
@@ -189,6 +260,9 @@ export const useStaffManagement = () => {
 
   return {
     staffList,
+    divisions,
+    departments,
+    teams,
     loading,
     showModal,
     showViewModal,
@@ -197,6 +271,8 @@ export const useStaffManagement = () => {
     isSubmitting,
     generatedStaffId,
     updateGeneratedStaffId,
+    fetchDepartmentsByDivision,
+    fetchTeamsByDepartment,
     addStaff,
     updateStaff,
     deleteStaff,

@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { StaffData, AttendanceRecord } from '../types';
+import { StaffMember, AttendanceRecord } from '../types';
 import { getScope } from '../utils/positionRules';
 import { config } from '../utils/config';
 
 export const useAttendance = () => {
   const navigate = useNavigate();
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [staff, setStaff] = useState<StaffData | null>(null);
+  const [staff, setStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   
-
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
     const staffId = localStorage.getItem('staff_id');
     
@@ -21,50 +20,56 @@ export const useAttendance = () => {
       return;
     }
     
-    const fetchData = async () => {
-      try {
-        // Fetch staff list
-        const staffRes = await fetch(`${config.apiUrl}/staff/`, {
-          headers: { Authorization: `Bearer ${token}` }
+    try {
+      // Fetch staff list
+      const staffRes = await fetch(`${config.apiUrl}/staff/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const staffList = await staffRes.json();
+      const current = staffList.find((s: StaffMember) => s.staff_id === staffId);
+      if (!current) throw new Error('Staff not found');
+      setStaff(current);
+      
+      // Fetch all attendance
+      const attRes = await fetch(`${config.apiUrl}/attendance`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const attData = await attRes.json();
+      const rawAttendance = Array.isArray(attData) ? attData : attData.data || [];
+      const allAttendance: AttendanceRecord[] = rawAttendance.map((record: any) => ({...record, staff_name: record.staff?.staff_name || 'Unknown'}));
+      
+      // Filter based on position scope
+      const scope = getScope(current.staff_position);
+      let filtered: AttendanceRecord[] = [];
+      
+      if (scope === 'all') {
+        filtered = allAttendance;
+      } else if (scope === 'team') {
+        filtered = allAttendance.filter((r: AttendanceRecord) => {
+          const recordStaff = staffList.find((s: StaffMember) => s.staff_id === r.staff_id);
+          return recordStaff?.team_id === current.team_id;
         });
-        const staffList = await staffRes.json();
-        const current = staffList.find((s: StaffData) => s.staff_id === staffId);
-        if (!current) throw new Error('Staff not found');
-        setStaff(current);
-        
-        // Fetch all attendance
-        const attRes = await fetch(`${config.apiUrl}/attendance`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const attData = await attRes.json();
-        let allAttendance: AttendanceRecord[] = Array.isArray(attData) ? attData : attData.data || [];
-        
-        // Filter based on position scope
-        const scope = getScope(current.staff_position);
-        let filtered: AttendanceRecord[] = [];
-        
-        if (scope === 'all') {
-          filtered = allAttendance;
-        } else if (scope === 'team') {
-          filtered = allAttendance.filter((r: AttendanceRecord) => {
-            const recordStaff = staffList.find((s: StaffData) => s.staff_id === r.staff_id);
-            return recordStaff?.team_id === current.team_id;
-          });
-        } else {
-          filtered = allAttendance.filter((r: AttendanceRecord) => r.staff_id === staffId);
-        }
-        
-        setAttendance(filtered);
-      } catch (err) {
-        console.error(err);
-        navigate('/');
-      } finally {
-        setLoading(false);
+      } else {
+        filtered = allAttendance.filter((r: AttendanceRecord) => r.staff_id === staffId);
       }
-    };
-    
-    fetchData();
+      
+      setAttendance(filtered);
+    } catch (err) {
+      console.error(err);
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
   }, [navigate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const refreshAttendance = useCallback(() => {
+    setLoading(true);
+    fetchData();
+  }, [fetchData]);
 
   // Filter by date if selected
   const filteredByDate = selectedDate
@@ -81,5 +86,6 @@ export const useAttendance = () => {
     selectedDate,
     setSelectedDate,
     canFilterByDate,
+    refreshAttendance,
   };
 };

@@ -15,6 +15,6 @@ export const AttendanceStats = ({ total, present, leave, halfLeave, absence }: A
     <StatCard label="Present" value={present} color="text-green-600" icon={CheckCircle} />
     <StatCard label="Leave" value={leave} color="text-red-600" icon={XCircle} />
     <StatCard label="Half Leave" value={halfLeave} color="text-amber-600" icon={Clock} />
-    <StatCard label="Absence" value={absence} color="text-purple-600" icon={UserX} />
+    <StatCard label="Absence" value={absence} color="text-slate-600" icon={UserX} />
   </div>
 );

@@ -70,20 +70,20 @@ const ViewStaffModal: React.FC<ViewStaffModalProps> = ({
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-500">Division</label>
-                <p className="text-gray-800 mt-1">{staff.division || '-'}</p>
+                <p className="text-gray-800 mt-1">{staff.division?.div_name || '-'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-500">Department</label>
-                <p className="text-gray-800 mt-1">{staff.department || '-'}</p>
+                <p className="text-gray-800 mt-1">{staff.department?.dept_name || '-'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-500">Team</label>
-                <p className="text-gray-800 mt-1">{staff.team || '-'}</p>
+                <p className="text-gray-800 mt-1">{staff.team?.team_name || '-'}</p>
               </div>
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-500">Appointment Date</label>
-                <p className="text-gray-800 mt-1">{staff.appointment_date || '-'}</p>
-              </div> */}
+              <div>
+                <label className="block text-sm font-medium text-gray-500">Permanent Status</label>
+                <p className="text-gray-800 mt-1">{staff.staff_permanent_status || '-'}</p>
+              </div>
             </div>
           </div>
           
