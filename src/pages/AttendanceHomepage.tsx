@@ -80,13 +80,16 @@ const AttendanceHomepage = () => {
             <h1 className="text-xl font-semibold text-gray-800">AMS</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <User size={18} className="text-gray-500" />
-              <span className="font-medium text-gray-700">{staff.staff_name}</span>
-              <span className="text-xs text-gray-400">({staff.staff_id})</span>
-            <div className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-              {staff.staff_position}
-            </div>
+                {/* User Info */}
+                <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-2">
+                        <User size={18} className="text-gray-500" />
+                        <span className="font-medium text-gray-700">{staff.staff_name}</span>
+                        <span className="text-xs text-gray-400">({staff.staff_id})</span>
+                    </div>
+              <div className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs ml-6">
+                {staff.staff_position}
+              </div>
             </div>
             
             <Dropdown isAdmin={isAdmin} />
