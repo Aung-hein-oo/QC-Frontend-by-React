@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, X, Send, AlertTriangle, Pencil } from 'lucide-react';
+import { X, Send, AlertTriangle, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAttendance } from '../hooks/useAttendance';
-import Header from '../components/attendance/Header';
+import Header from '../components/profile/Header';
 const API_URL = 'http://192.168.250.1:8065';
 const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 type LeaveModalType = {
@@ -165,7 +165,7 @@ const LeaveRequest: React.FC = () => {
     if (!staff) return null;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300">
+        <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
 
             {/* HEADER */}
             <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
@@ -175,15 +175,6 @@ const LeaveRequest: React.FC = () => {
             <main className="max-w-7xl mx-auto px-4 py-6">
                 {/* TOP BAR */}
                 <div className="flex justify-between mb-6">
-                    {/* LEFT: Back Button */}
-                    <button
-                        onClick={() => navigate('/user_profile')}
-                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-                    >
-                        <ArrowLeft size={20} />
-                        Back to UserProfile
-                    </button>
-
                     {/* RIGHT: Action Buttons */}
                     <div className="flex justify-end gap-3">
                         <button

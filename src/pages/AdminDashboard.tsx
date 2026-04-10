@@ -104,9 +104,9 @@ const AdminDashboard: React.FC = () => {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-cyan-100/30 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100/30 to-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-xl shadow-lg">
-          <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+          <div className="animate-spin w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full mx-auto mb-2"></div>
           <span className="text-gray-600">Loading...</span>
         </div>
       </div>
@@ -119,7 +119,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-300 via-teal-300 to-teal-300">
+    <div className="min-h-screen bg-gradient-to-br from-gray-300 via-gray-300 to-gray-300">
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}

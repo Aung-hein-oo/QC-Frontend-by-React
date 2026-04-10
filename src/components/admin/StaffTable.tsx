@@ -179,9 +179,6 @@ const StaffTable: React.FC<StaffTableProps> = ({
                   <td className="p-3 font-medium">{staff.staff_id}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User size={14} className="text-blue-600" />
-                      </div>
                       <span>{staff.staff_name}</span>
                     </div>
                    </td>
