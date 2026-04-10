@@ -27,7 +27,7 @@ const CalendarPicker: React.FC = () => {
     <div className="flex items-center gap-2">
       {/* Searching Text */}
       <span className="text-lg text-gray-700 font-semibold">
-        Record pr Monthdly:
+        Monthly Record:
       </span>
       {/* Calendar Icon */}
       <div className="relative">

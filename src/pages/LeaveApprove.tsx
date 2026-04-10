@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAttendance } from '../hooks/useAttendance';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import Header from '../components/attendance/Header';
+import Header from '../components/profile/Header';
 
 const LeaveApprove: React.FC = () => {
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ const LeaveApprove: React.FC = () => {
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300">
+        <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
 
             {/* HEADER */}
             <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
@@ -23,14 +23,6 @@ const LeaveApprove: React.FC = () => {
             <main className="max-w-7xl mx-auto px-4 py-6">
                 {/* TOP BAR */}
                 <div className="flex justify-between mb-6">
-                    {/* LEFT: Back Button */}
-                    <button
-                        onClick={() => navigate('/user_profile')}
-                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-                    >
-                        <ArrowLeft size={20} />
-                        Back to UserProfile
-                    </button>
                 </div>
 
                 {/* TABLE (UNCHANGED) */}

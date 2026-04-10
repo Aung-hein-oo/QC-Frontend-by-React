@@ -1,0 +1,21 @@
+@layer base {
+  /* 1. Fixes backdrop-blur for Chrome/Edge */
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px); /* Chrome/Safari prefix */
+    backdrop-filter: blur(4px);
+  }
+
+  /* 2. Prevents parent containers from clipping the fixed modal */
+  body {
+    isolation: isolate; 
+  }
+
+  /* 3. Ensures the modal container fills the viewport in Chromium */
+  .fixed.inset-0 {
+    height: 100dvh; /* Dynamic viewport height for mobile Chrome/Edge */
+  }
+  
+  .animate-in {
+  animation-fill-mode: forwards !important;
+}
+}

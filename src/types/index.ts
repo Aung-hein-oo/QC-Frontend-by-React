@@ -65,4 +65,31 @@ export type AttendanceRecord = {
     staff_position: string;
   };
 };
+
+export interface BaseLeaveBalance {
+  staff_id: string;
+  cascual_leave: number;
+  family_funeral_health_leave: number;
+  leave_with_pay: number;
+  leave_without_pay: number;
+  married_leave: number;
+  medical_leave: number;
+  id: number;
+}
+
+// Male leave balance (with paternity leave)
+export interface MaleLeaveBalance extends BaseLeaveBalance {
+  parternity_leave: number;
+  maternity_leave?: never;
+}
+
+// Female leave balance (with maternity leave)
+export interface FemaleLeaveBalance extends BaseLeaveBalance {
+  parternity_leave?: never;
+  maternity_leave: number;
+}
+
+// Union type for leave balance
+export type LeaveBalance = MaleLeaveBalance | FemaleLeaveBalance;
+
 export interface FormData extends Partial<StaffMember> {}
