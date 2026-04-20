@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Check, X, AlertCircle, Edit2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 
@@ -43,6 +43,9 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
   const updateDropdownPosition = () => {
     if (!showDropdown || !buttonRef.current) return;
     
+    requestAnimationFrame(() => {
+      if (!buttonRef.current) return;
+
     const rect = buttonRef.current.getBoundingClientRect();
     const { height: dropdownHeight, width: dropdownWidth, padding } = DROPDOWN_CONFIG;
     const { innerHeight: viewportHeight, innerWidth: viewportWidth } = window;
@@ -65,14 +68,21 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
     );
     
     setDropdownCoords({ top, left });
+    });
   };
 
-  useEffect(() => {
+  // Use useLayoutEffect for synchronous painting before browser renders
+  useLayoutEffect(() => {
     if (showDropdown) {
+      const timeoutId = setTimeout(() => {
       updateDropdownPosition();
+    }, 0);
+      
       window.addEventListener('scroll', updateDropdownPosition, true);
       window.addEventListener('resize', updateDropdownPosition);
+      
       return () => {
+        clearTimeout(timeoutId);
         window.removeEventListener('scroll', updateDropdownPosition, true);
         window.removeEventListener('resize', updateDropdownPosition);
       };
@@ -115,19 +125,41 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
 
   if (!isAdmin) return <StatusBadge status={currentStatus} />;
 
+  // Helper function for color classes (fixes Tailwind dynamic classes)
+  const getIconColorClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      green: 'text-green-600',
+      amber: 'text-amber-600',
+      red: 'text-red-600',
+      gray: 'text-gray-600'
+    };
+    return colorMap[color] || 'text-gray-600';
+  };
+
+  const getHoverBgClass = (color: string) => {
+    const colorMap: Record<string, string> = {
+      green: 'hover:bg-green-50',
+      amber: 'hover:bg-amber-50',
+      red: 'hover:bg-red-50',
+      gray: 'hover:bg-gray-50'
+    };
+    return colorMap[color] || 'hover:bg-gray-50';
+  };
+
   return (
     <>
-      <div className="relative" ref={buttonRef}>
-        <div className="flex items-center gap-2">
+      <div className="relative inline-flex items-center gap-2" ref={buttonRef}>
+        {/* Fixed width container for status badge to prevent layout shifts */}
+        <div className="min-w-[100px]">
           <StatusBadge status={currentStatus} />
-          <button
-            onClick={() => onStatusClick(recordId)}
-            className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-            title="Change status"
-          >
-            <Edit2 size={14} className="text-gray-500 hover:text-blue-600" />
-          </button>
         </div>
+        <button
+          onClick={() => onStatusClick(recordId)}
+          className="p-1 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0"
+          title="Change status"
+        >
+          <Edit2 size={14} className="text-gray-500 hover:text-blue-600" />
+        </button>
         
         {showDropdown && (
           <div 
@@ -147,20 +179,20 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
                     onClick={() => handleStatusSelect(status)}
                     disabled={isUpdating || isCurrent}
                     className={`w-full text-left px-4 py-2.5 transition-all duration-150 group ${
-                      !isCurrent && !isUpdating ? `hover:bg-${color}-50 hover:pl-5` : ''
+                      !isCurrent && !isUpdating ? `${getHoverBgClass(color)} hover:pl-5` : ''
                     } ${isCurrent ? 'bg-gray-50 cursor-default' : ''} ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Icon size={16} className={`text-${color}-600 transition-transform group-hover:scale-110`} />
-                        <span className={`text-sm font-medium ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
+                        <Icon size={16} className={`${getIconColorClass(color)} transition-transform group-hover:scale-110`} />
+                        <span className={`text-sm font-medium whitespace-nowrap ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
                           {status}
                         </span>
                       </div>
                       {isCurrent && (
                         <div className="flex items-center gap-1">
                           <Check size={14} className="text-green-600" />
-                          <span className="text-xs text-gray-500">Current</span>
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Current</span>
                         </div>
                       )}
                     </div>
