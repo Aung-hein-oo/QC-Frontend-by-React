@@ -27,7 +27,7 @@ type FilterState = {
 // Helper component for remark cell
 const RemarkCell = ({ remark }: { remark: string }) => {
   const [expanded, setExpanded] = useState(false);
-  const maxLength = 50;
+  const maxLength = 100;
   const needsTruncation = remark && remark.length > maxLength;
   
   if (!remark || remark === '-') {

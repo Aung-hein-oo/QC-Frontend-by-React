@@ -1,4 +1,3 @@
-// components/common/Notification.tsx
 import React, { useEffect, useState } from 'react';
 import { X, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
@@ -65,7 +64,7 @@ const Notification: React.FC<NotificationProps> = ({
   };
 
   return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${getBackgroundColor()} animate-slide-in`}>
+    <div className={`fixed top-20 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${getBackgroundColor()} animate-slide-in`}>
       {getIcon()}
       <p className={`text-sm font-medium ${getTextColor()}`}>{message}</p>
       <button
