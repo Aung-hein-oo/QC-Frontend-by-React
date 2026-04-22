@@ -180,57 +180,98 @@ export const useStaffManagement = () => {
     }
   };
 
-  const updateStaff = async (formData: StaffFormData, staffId: string) => {
-    setIsSubmitting(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/staff/${staffId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      if (response.ok) {
-        alert('Staff updated successfully');
-        setShowModal(false);
-        await fetchStaffList();
-        return true;
+  const updateStaff = async (formData: StaffFormData, staffDatabaseId: string) => {
+  console.log('=== UPDATE STAFF FUNCTION CALLED ===');
+  console.log('Received staffDatabaseId:', staffDatabaseId);
+  console.log('Type of staffDatabaseId:', typeof staffDatabaseId);
+  console.log('Form data being sent:', formData);
+  
+  setIsSubmitting(true);
+  try {
+    const token = localStorage.getItem('token');
+    const url = `${config.apiUrl}/staff/${staffDatabaseId}`;
+    console.log('PUT Request URL:', url);
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response OK:', response.ok);
+    
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log('Update successful:', responseData);
+      alert('Staff updated successfully');
+      setShowModal(false);
+      await fetchStaffList();
+      return true;
+    } else {
+      const errorData = await response.json();
+      console.error('Update failed with error:', errorData);
+      // Log the detailed validation errors
+      if (errorData.detail && Array.isArray(errorData.detail)) {
+        console.error('Validation errors:');
+        errorData.detail.forEach((err: any, index: number) => {
+          console.error(`Error ${index + 1}:`, err);
+          if (err.loc) console.error('  Location:', err.loc);
+          if (err.msg) console.error('  Message:', err.msg);
+          if (err.type) console.error('  Type:', err.type);
+        });
+        alert(`Failed to update staff:\n${errorData.detail.map((err: any) => err.msg).join('\n')}`);
       } else {
-        const errorData = await response.json();
         alert(`Failed to update staff: ${errorData.message || 'Unknown error'}`);
-        return false;
       }
-    } catch (error) {
-      console.error('Error updating staff:', error);
-      alert('Error updating staff member');
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (error) {
+    console.error('Error updating staff:', error);
+    alert('Error updating staff member');
+    return false;
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-  const deleteStaff = async (staffId: string) => {
+  const deleteStaff = async (staffDatabaseId: string) => {
+    console.log('=== DELETE STAFF FUNCTION CALLED ===');
+    console.log('Received staffDatabaseId:', staffDatabaseId);
+    console.log('Type of staffDatabaseId:', typeof staffDatabaseId);
+    
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${config.apiUrl}/staff/${staffId}`, {
+        const url = `${config.apiUrl}/staff/${staffDatabaseId}`;
+        console.log('DELETE Request URL:', url);
+        
+        const response = await fetch(url, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response OK:', response.ok);
+        
         if (response.ok) {
+          console.log('Delete successful');
           alert('Staff member deleted successfully');
           await fetchStaffList();
         } else {
+          const errorData = await response.json();
+          console.error('Delete failed:', errorData);
           alert('Failed to delete staff member');
         }
       } catch (error) {
         console.error('Error deleting staff:', error);
         alert('Error deleting staff member');
       }
+    } else {
+      console.log('Delete cancelled by user');
     }
   };
 
@@ -241,6 +282,10 @@ export const useStaffManagement = () => {
   };
 
   const openEditModal = (staff: StaffMember) => {
+    console.log('=== OPEN EDIT MODAL ===');
+    console.log('Staff object:', staff);
+    console.log('Staff database ID (staff.id):', staff.id);
+    console.log('Staff custom ID (staff.staff_id):', staff.staff_id);
     setEditingStaff(staff);
     setShowModal(true);
   };

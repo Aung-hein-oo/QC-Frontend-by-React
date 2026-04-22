@@ -51,6 +51,8 @@ export interface StaffFormData {
   division_id?: number;
   department_id?: number;
   team_id?: number;
+  staff_permanent_status?: string; 
+  staff_password?: string;
 }
 
 export type AttendanceRecord = {
