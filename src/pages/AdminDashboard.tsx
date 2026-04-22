@@ -75,7 +75,8 @@ const AdminDashboard: React.FC = () => {
 
   const handleSubmit = async (formData: any) => {
     if (editingStaff) {
-      await updateStaff(formData, editingStaff.staff_id);
+      // Pass the database ID (primary key) instead of staff_id
+      await updateStaff(formData, editingStaff.id.toString());
     } else {
       await addStaff(formData);
     }
@@ -89,7 +90,7 @@ const AdminDashboard: React.FC = () => {
     showNotification('Excel export functionality will be implemented soon', 'info');
   };
 
-    const handleHolidayImport = () => {
+  const handleHolidayImport = () => {
     showNotification('Holiday import functionality will be implemented soon', 'info');
   };
 
