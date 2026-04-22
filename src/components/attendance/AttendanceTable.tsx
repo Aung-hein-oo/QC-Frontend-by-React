@@ -3,9 +3,9 @@ import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { AttendanceRecord } from '../../types';
 import { Pagination } from '../common/Pagination';
 import { useNotification } from '../common/Notification';
-import { config } from '../../utils/config';
 import { AttendanceTableHeader } from './AttendanceTableHeader';
 import { StatusUpdateDropdown } from './StatusUpdateDropdown';
+import { AttendanceTypeUpdateDropdown } from './AttendanceTypeUpdateDropdown';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
@@ -13,6 +13,12 @@ type AttendanceTableProps = {
   itemsPerPage?: number;
   isAdmin?: boolean;
   onStatusUpdate?: () => void;
+  onUpdateStatus?: (recordId: string, newStatus: string) => Promise<{ success: boolean; error?: string }>;
+  onUpdateType?: (recordId: string, newType: string) => Promise<{ success: boolean; error?: string }>;
+  isUpdating?: boolean;
+  updatingId?: string | null;
+  updatingTypeId?: string | null;
+  availableTypes?: string[];
 };
 
 type FilterState = {
@@ -68,24 +74,37 @@ export const AttendanceTable = ({
   showStaffInfo, 
   itemsPerPage: initialItemsPerPage = 25,
   isAdmin = false,
-  onStatusUpdate 
+  onStatusUpdate,
+  onUpdateStatus,
+  onUpdateType,
+  isUpdating: externalIsUpdating,
+  updatingId: externalUpdatingId,
+  updatingTypeId: externalUpdatingTypeId,
+  availableTypes = []
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
   const [filters, setFilters] = useState<FilterState>({});
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [localUpdatingId, setLocalUpdatingId] = useState<string | null>(null);
+  const [localUpdatingTypeId, setLocalUpdatingTypeId] = useState<string | null>(null);
+  const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
+  const [openTypeDropdownId, setOpenTypeDropdownId] = useState<string | null>(null);
   const { showNotification } = useNotification();
+
+  // Use external updating state if provided, otherwise use local
+  const updatingId = externalUpdatingId !== undefined ? externalUpdatingId : localUpdatingId;
+  const updatingTypeId = externalUpdatingTypeId !== undefined ? externalUpdatingTypeId : localUpdatingTypeId;
+  const isUpdating = externalIsUpdating !== undefined ? externalIsUpdating : (localUpdatingId !== null || localUpdatingTypeId !== null);
 
   // Filter records
   const filteredRecords = attendance.filter(record => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
       if (key === 'attendance_status') return record.attendance_status === value;
+      if (key === 'attendance_type') return record.attendance_type?.toLowerCase().includes(value.toLowerCase());
       if (key === 'date') return record.date.includes(value);
       if (key === 'staff_id') return record.staff_id?.toLowerCase().includes(value.toLowerCase());
       if (key === 'staff_name') return record.staff?.staff_name?.toLowerCase().includes(value.toLowerCase());
-      if (key === 'attendance_type') return record.attendance_type?.toLowerCase().includes(value.toLowerCase());
       if (key === 'remark') return record.remark?.toLowerCase().includes(value.toLowerCase());
       return true;
     });
@@ -111,36 +130,53 @@ export const AttendanceTable = ({
 
   // Status update handler
   const updateStatus = async (recordId: string, newStatus: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showNotification('Please login to continue.', 'error');
+    if (!onUpdateStatus) {
+      showNotification('Update status function not provided', 'error');
       return;
     }
 
-    setUpdatingId(recordId);
+    setLocalUpdatingId(recordId);
     
     try {
-      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ attendance_status: newStatus }),
-      });
-
-      if (response.ok) {
+      const result = await onUpdateStatus(recordId, newStatus);
+      
+      if (result.success) {
         showNotification(`✓ Status updated to "${newStatus}"`, 'success');
         await onStatusUpdate?.();
-        setOpenDropdownId(null);
+        setOpenStatusDropdownId(null);
       } else {
-        const error = await response.json();
-        showNotification(error.message || 'Failed to update status', 'error');
+        showNotification(result.error || 'Failed to update status', 'error');
       }
     } catch (error) {
       showNotification('Failed to update status. Please try again.', 'error');
     } finally {
-      setUpdatingId(null);
+      setLocalUpdatingId(null);
+    }
+  };
+
+  // Type update handler
+  const updateType = async (recordId: string, newType: string) => {
+    if (!onUpdateType) {
+      showNotification('Update type function not provided', 'error');
+      return;
+    }
+
+    setLocalUpdatingTypeId(recordId);
+    
+    try {
+      const result = await onUpdateType(recordId, newType);
+      
+      if (result.success) {
+        showNotification(`✓ Type updated to "${newType}"`, 'success');
+        await onStatusUpdate?.();
+        setOpenTypeDropdownId(null);
+      } else {
+        showNotification(result.error || 'Failed to update type', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to update type. Please try again.', 'error');
+    } finally {
+      setLocalUpdatingTypeId(null);
     }
   };
 
@@ -199,12 +235,23 @@ export const AttendanceTable = ({
                       currentStatus={record.attendance_status}
                       isAdmin={isAdmin}
                       isUpdating={updatingId === String(record.id)}
-                      showDropdown={openDropdownId === String(record.id)}
-                      onStatusClick={(id) => setOpenDropdownId(openDropdownId === id ? null : id)}
+                      showDropdown={openStatusDropdownId === String(record.id)}
+                      onStatusClick={(id) => setOpenStatusDropdownId(openStatusDropdownId === id ? null : id)}
                       onStatusConfirm={updateStatus}
                     />
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-600">{record.attendance_type || '-'}</td>
+                  <td className="px-6 py-3">
+                    <AttendanceTypeUpdateDropdown
+                      recordId={String(record.id)}
+                      currentType={record.attendance_type}
+                      isAdmin={isAdmin}
+                      isUpdating={updatingTypeId === String(record.id)}
+                      showDropdown={openTypeDropdownId === String(record.id)}
+                      availableTypes={availableTypes}
+                      onTypeClick={(id) => setOpenTypeDropdownId(openTypeDropdownId === id ? null : id)}
+                      onTypeConfirm={updateType}
+                    />
+                  </td>
                   <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
                     <RemarkCell remark={record.remark || '-'} />
                   </td>
