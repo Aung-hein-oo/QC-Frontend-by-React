@@ -14,7 +14,20 @@ import Dropdown from "../components/profile/Dropdown";
 const AttendanceHomepage = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
-  const { staff, attendance, loading, selectedDate, setSelectedDate, canFilterByDate, refreshAttendance } = useAttendance();
+  const { 
+  staff, 
+  attendance, 
+  loading, 
+  selectedDate, 
+  setSelectedDate, 
+  canFilterByDate, 
+  refreshAttendance,
+  updateAttendanceStatus,
+  updateAttendanceType,
+  updatingId,
+  updatingTypeId,
+  availableTypes
+} = useAttendance();
 
   // Store staff data in localStorage when it's loaded
   useEffect(() => {
@@ -80,13 +93,13 @@ const AttendanceHomepage = () => {
             <h1 className="text-xl font-semibold text-gray-800">AMS</h1>
           </div>
           <div className="flex items-center gap-4">
-                {/* User Info */}
-                <div className="flex flex-col items-end gap-0.5">
-                    <div className="flex items-center gap-2">
-                        <User size={18} className="text-gray-500" />
-                        <span className="font-medium text-gray-700">{staff.staff_name}</span>
-                        <span className="text-xs text-gray-400">({staff.staff_id})</span>
-                    </div>
+            {/* User Info */}
+            <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center gap-2">
+                <User size={18} className="text-gray-500" />
+                <span className="font-medium text-gray-700">{staff.staff_name}</span>
+                <span className="text-xs text-gray-400">({staff.staff_id})</span>
+              </div>
               <div className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs ml-6">
                 {staff.staff_position}
               </div>
@@ -124,6 +137,11 @@ const AttendanceHomepage = () => {
             showStaffInfo={showFullTable}
             isAdmin={isAdmin}
             onStatusUpdate={refreshAttendance}
+            onUpdateStatus={updateAttendanceStatus}
+            onUpdateType={updateAttendanceType}
+            updatingId={updatingId}
+            updatingTypeId={updatingTypeId}
+            availableTypes={availableTypes}
           />
         </div>
 
@@ -131,7 +149,6 @@ const AttendanceHomepage = () => {
           © 2026 Attendance Management System by MODOS. All rights reserved.
         </div>
       </main>
-
     </div>
   );
 };

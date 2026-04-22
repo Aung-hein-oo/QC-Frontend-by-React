@@ -10,6 +10,30 @@ export const useAttendance = () => {
   const [staff, setStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updatingTypeId, setUpdatingTypeId] = useState<string | null>(null);
+  const [availableTypes, setAvailableTypes] = useState<string[]>([]);
+  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  
+  // Fetch attendance options (statuses and types)
+  const fetchAttendanceOptions = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${config.apiUrl}/attendance/meta/options`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableStatuses(data.statuses || []);
+        setAvailableTypes(data.types || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch attendance options:', err);
+    }
+  }, []);
   
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -62,9 +86,78 @@ export const useAttendance = () => {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    fetchData();
+  // Update attendance status
+  const updateAttendanceStatus = useCallback(async (recordId: string, newStatus: string): Promise<{ success: boolean; error?: string }> => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return { success: false, error: 'Please login to continue.' };
+    }
+
+    setUpdatingId(recordId);
+    
+    try {
+      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attendance_status: newStatus }),
+      });
+
+      if (response.ok) {
+        // Refresh the attendance data after successful update
+        await fetchData();
+        return { success: true };
+      } else {
+        const error = await response.json();
+        return { success: false, error: error.message || 'Failed to update status' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Failed to update status. Please try again.' };
+    } finally {
+      setUpdatingId(null);
+    }
   }, [fetchData]);
+
+  // Update attendance type
+  const updateAttendanceType = useCallback(async (recordId: string, newType: string): Promise<{ success: boolean; error?: string }> => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return { success: false, error: 'Please login to continue.' };
+    }
+
+    setUpdatingTypeId(recordId);
+    
+    try {
+      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ attendance_type: newType }),
+      });
+
+      if (response.ok) {
+        // Refresh the attendance data after successful update
+        await fetchData();
+        return { success: true };
+      } else {
+        const error = await response.json();
+        return { success: false, error: error.message || 'Failed to update type' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Failed to update type. Please try again.' };
+    } finally {
+      setUpdatingTypeId(null);
+    }
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchAttendanceOptions();
+    fetchData();
+  }, [fetchData, fetchAttendanceOptions]);
 
   const refreshAttendance = useCallback(() => {
     setLoading(true);
@@ -87,5 +180,11 @@ export const useAttendance = () => {
     setSelectedDate,
     canFilterByDate,
     refreshAttendance,
+    updateAttendanceStatus,
+    updateAttendanceType,
+    updatingId,
+    updatingTypeId,
+    availableTypes,
+    availableStatuses,
   };
 };

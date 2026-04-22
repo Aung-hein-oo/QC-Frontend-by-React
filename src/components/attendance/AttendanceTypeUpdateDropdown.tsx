@@ -1,44 +1,32 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { Check, X, AlertCircle, Edit2, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
-import './StatusUpdateDropdown.css';
+import { Check, X, AlertCircle, Edit2, ChevronDown } from 'lucide-react';
+import { AttendanceTypeBadge } from './AttendanceTypeBadge';
+import './StatusUpdateDropdown.css'; // Reuse the same CSS
 
-interface StatusUpdateDropdownProps {
+interface AttendanceTypeUpdateDropdownProps {
   recordId: string;
-  currentStatus: string;
+  currentType: string | undefined;
   isAdmin: boolean;
   isUpdating: boolean;
   showDropdown: boolean;
-  onStatusClick: (recordId: string) => void;
-  onStatusConfirm: (recordId: string, newStatus: string) => void;
+  availableTypes: string[];
+  onTypeClick: (recordId: string) => void;
+  onTypeConfirm: (recordId: string, newType: string) => void;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'Present', icon: CheckCircle, color: 'green' },
-  { value: 'Half Leave', icon: Clock, color: 'amber' },
-  { value: 'Leave', icon: XCircle, color: 'red' },
-  { value: 'Absence', icon: XCircle, color: 'gray' }
-];
+const DROPDOWN_CONFIG = { height: 400, width: 280, padding: 10 };
 
-const DROPDOWN_CONFIG = { height: 235, width: 220, padding: 10 };
-
-const COLOR_MAP = {
-  green: 'text-green-600 hover:bg-green-50',
-  amber: 'text-amber-600 hover:bg-amber-50',
-  red: 'text-red-600 hover:bg-red-50',
-  gray: 'text-gray-600 hover:bg-gray-50'
-};
-
-export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
+export const AttendanceTypeUpdateDropdown: React.FC<AttendanceTypeUpdateDropdownProps> = ({
   recordId,
-  currentStatus,
+  currentType,
   isAdmin,
   isUpdating,
   showDropdown,
-  onStatusClick,
-  onStatusConfirm,
+  availableTypes,
+  onTypeClick,
+  onTypeConfirm,
 }) => {
-  const [modal, setModal] = useState<{ show: boolean; status: string | null }>({ show: false, status: null });
+  const [modal, setModal] = useState<{ show: boolean; type: string | null }>({ show: false, type: null });
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
   const [animation, setAnimation] = useState<'entering' | 'visible' | 'exiting'>('entering');
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -88,19 +76,19 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
     const handleClickOutside = (e: MouseEvent) => {
       if (showDropdown && dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && 
           buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        onStatusClick(recordId);
+        onTypeClick(recordId);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showDropdown, recordId, onStatusClick]);
+  }, [showDropdown, recordId, onTypeClick]);
 
-  const handleStatusSelect = (status: string) => {
-    if (status === currentStatus) {
-      onStatusClick(recordId);
+  const handleTypeSelect = (type: string) => {
+    if (type === currentType) {
+      onTypeClick(recordId);
       return;
     }
-    setModal({ show: true, status });
+    setModal({ show: true, type });
     setAnimation('entering');
     requestAnimationFrame(() => requestAnimationFrame(() => setAnimation('visible')));
   };
@@ -108,12 +96,12 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
   const closeModal = (confirm = false) => {
     setAnimation('exiting');
     setTimeout(() => {
-      if (confirm && modal.status) {
-        onStatusConfirm(recordId, modal.status);
+      if (confirm && modal.type) {
+        onTypeConfirm(recordId, modal.type);
       }
-      setModal({ show: false, status: null });
+      setModal({ show: false, type: null });
       setAnimation('entering');
-      if (!confirm) onStatusClick(recordId);
+      if (!confirm) onTypeClick(recordId);
     }, 200);
   };
 
@@ -125,18 +113,22 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [modal.show]);
 
-  if (!isAdmin) return <StatusBadge status={currentStatus} />;
+  if (!isAdmin) return <AttendanceTypeBadge type={currentType || '-'} />;
+
+  // Group types for better organization
+  const workTypes = availableTypes.filter(t => t === 'WFO' || t === 'WFH');
+  const leaveTypes = availableTypes.filter(t => t !== 'WFO' && t !== 'WFH');
 
   return (
     <>
       <div className="relative inline-flex items-center gap-2" ref={buttonRef}>
-        <div className="min-w-[100px]">
-          <StatusBadge status={currentStatus} />
+        <div className="min-w-[120px]">
+          <AttendanceTypeBadge type={currentType || '-'} />
         </div>
         <button
-          onClick={() => onStatusClick(recordId)}
+          onClick={() => onTypeClick(recordId)}
           className="p-1 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0 cursor-pointer"
-          title="Change status"
+          title="Change type"
         >
           <Edit2 size={14} className="text-gray-500 hover:text-blue-600" />
         </button>
@@ -147,39 +139,43 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
             className={`dropdown-container ${dropdownVisible ? 'visible' : ''}`}
             style={{ top: dropdownCoords.top, left: dropdownCoords.left, width: DROPDOWN_CONFIG.width }}
           >
-            <div className="p-3 border-b bg-gradient-to-r from-gray-50 to-white">
-              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Change Status</p>
+            <div className="p-3 border-b bg-gradient-to-r from-gray-50 to-white sticky top-0">
+              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Change Attendance Type</p>
             </div>
-            <div className="py-1">
-              {STATUS_OPTIONS.map(({ value: status, icon: Icon, color }) => {
-                const isCurrent = status === currentStatus;
-                const colorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
-                return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusSelect(status)}
-                    disabled={isUpdating || isCurrent}
-                    className={`w-full text-left px-4 py-2.5 transition-all duration-150 group ${
-                      !isCurrent && !isUpdating ? colorClass.split(' ')[1] : ''
-                    } ${isCurrent ? 'bg-gray-50 cursor-default' : ''} ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Icon size={16} className={`${colorClass?.split(' ')[0]} transition-transform group-hover:scale-110`} />
-                        <span className={`text-sm font-medium ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {status}
-                        </span>
-                      </div>
-                      {isCurrent && (
-                        <div className="flex items-center gap-1">
-                          <Check size={14} className="text-green-600" />
-                          <span className="text-xs text-gray-500">Current</span>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="py-1 max-h-[360px] overflow-y-auto">
+              {workTypes.length > 0 && (
+                <div className="mb-2">
+                  <div className="px-4 py-1.5">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Work Type</p>
+                  </div>
+                  {workTypes.map(type => (
+                    <TypeOption
+                      key={type}
+                      type={type}
+                      currentType={currentType}
+                      isUpdating={isUpdating}
+                      onSelect={handleTypeSelect}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {leaveTypes.length > 0 && (
+                <div>
+                  <div className="px-4 py-1.5">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Leave Type</p>
+                  </div>
+                  {leaveTypes.map(type => (
+                    <TypeOption
+                      key={type}
+                      type={type}
+                      currentType={currentType}
+                      isUpdating={isUpdating}
+                      onSelect={handleTypeSelect}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -191,7 +187,7 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
         )}
       </div>
 
-      {modal.show && modal.status && (
+      {modal.show && modal.type && (
         <div className={`modal-container ${animation === 'visible' ? 'visible' : ''} ${animation === 'exiting' ? 'exiting' : ''}`}>
           <div className="modal-backdrop" onClick={() => closeModal(false)} />
           <div className="modal-content">
@@ -201,8 +197,8 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
                   <AlertCircle size={20} className="text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Confirm Status Change</h3>
-                  <p className="text-sm text-gray-500">Update attendance status</p>
+                  <h3 className="text-lg font-semibold text-gray-800">Confirm Type Change</h3>
+                  <p className="text-sm text-gray-500">Update attendance type</p>
                 </div>
               </div>
               <button onClick={() => closeModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
@@ -216,12 +212,12 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">Current:</span>
-                    <StatusBadge status={currentStatus} />
+                    <AttendanceTypeBadge type={currentType || '-'} />
                   </div>
                   <span className="text-gray-400 text-xl">→</span>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-700">New:</span>
-                    <StatusBadge status={modal.status} />
+                    <AttendanceTypeBadge type={modal.type} />
                   </div>
                 </div>
               </div>
@@ -247,5 +243,35 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
         </div>
       )}
     </>
+  );
+};
+
+// Helper component for type options
+const TypeOption: React.FC<{
+  type: string;
+  currentType: string | undefined;
+  isUpdating: boolean;
+  onSelect: (type: string) => void;
+}> = ({ type, currentType, isUpdating, onSelect }) => {
+  const isCurrent = type === currentType;
+  
+  return (
+    <button
+      onClick={() => onSelect(type)}
+      disabled={isUpdating || isCurrent}
+      className={`w-full text-left px-4 py-2.5 transition-all duration-150 group ${
+        !isCurrent && !isUpdating ? 'hover:bg-gray-50' : ''
+      } ${isCurrent ? 'bg-gray-50 cursor-default' : ''} ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+    >
+      <div className="flex items-center justify-between">
+        <AttendanceTypeBadge type={type} />
+        {isCurrent && (
+          <div className="flex items-center gap-1">
+            <Check size={14} className="text-green-600" />
+            <span className="text-xs text-gray-500">Current</span>
+          </div>
+        )}
+      </div>
+    </button>
   );
 };
