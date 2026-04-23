@@ -43,8 +43,8 @@ const StaffModal: React.FC<StaffModalProps> = ({
     division_id: undefined,
     department_id: undefined,
     team_id: undefined,
-    staff_permanent_status: '',  // Add this
-    staff_password: '',          // Add this
+    staff_permanent_status: '',
+    staff_password: '',
   });
 
   // Initialize form when modal opens or editing staff changes
@@ -60,11 +60,16 @@ const StaffModal: React.FC<StaffModalProps> = ({
         division_id: editingStaff.division?.id || editingStaff.division_id,
         department_id: editingStaff.department?.id || editingStaff.department_id,
         team_id: editingStaff.team?.id || editingStaff.team_id,
-        staff_permanent_status: editingStaff.staff_permanent_status || 'Permanent', // Default value
-        staff_password: editingStaff.staff_password || '',
+        staff_permanent_status: editingStaff.staff_permanent_status || 'No',
+        staff_password: '',
       });
     } else if (generatedStaffId) {
-      setFormData(prev => ({ ...prev, staff_id: generatedStaffId, staff_permanent_status: 'Permanent', }));
+      setFormData(prev => ({ 
+        ...prev, 
+        staff_id: generatedStaffId, 
+        staff_permanent_status: 'No',
+        staff_password: 'default123',
+      }));
     } else {
       setFormData({
         staff_id: '',
@@ -76,8 +81,8 @@ const StaffModal: React.FC<StaffModalProps> = ({
         division_id: undefined,
         department_id: undefined,
         team_id: undefined,
-        staff_permanent_status: 'Permanent', // Default value
-        staff_password: '',
+        staff_permanent_status: 'No',
+        staff_password: 'default123',
       });
     }
   }, [editingStaff, generatedStaffId, isOpen]);

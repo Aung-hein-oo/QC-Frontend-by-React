@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
-import { AttendanceRecord } from '../../types';
+import { AttendanceRecord, StaffMember } from '../../types';
 import { Pagination } from '../common/Pagination';
 import { useNotification } from '../common/Notification';
 import { AttendanceTableHeader } from './AttendanceTableHeader';
@@ -11,7 +11,8 @@ type AttendanceTableProps = {
   attendance: AttendanceRecord[];
   showStaffInfo: boolean;
   itemsPerPage?: number;
-  isAdmin?: boolean;
+  currentStaff?: StaffMember | null;
+  canEditRecord?: (record: AttendanceRecord) => boolean;
   onStatusUpdate?: () => void;
   onUpdateStatus?: (recordId: string, newStatus: string) => Promise<{ success: boolean; error?: string }>;
   onUpdateType?: (recordId: string, newType: string) => Promise<{ success: boolean; error?: string }>;
@@ -19,6 +20,8 @@ type AttendanceTableProps = {
   updatingId?: string | null;
   updatingTypeId?: string | null;
   availableTypes?: string[];
+  scrollable?: boolean;
+  fixedHeader?: boolean;
 };
 
 type FilterState = {
@@ -73,14 +76,17 @@ export const AttendanceTable = ({
   attendance, 
   showStaffInfo, 
   itemsPerPage: initialItemsPerPage = 25,
-  isAdmin = false,
+  currentStaff,
+  canEditRecord,
   onStatusUpdate,
   onUpdateStatus,
   onUpdateType,
   isUpdating: externalIsUpdating,
   updatingId: externalUpdatingId,
   updatingTypeId: externalUpdatingTypeId,
-  availableTypes = []
+  availableTypes = [],
+  scrollable = false,
+  fixedHeader = false,
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
@@ -127,6 +133,15 @@ export const AttendanceTable = ({
   };
 
   const hasFilters = Object.values(filters).some(Boolean);
+
+  // Check if user can edit a specific record
+  const checkCanEdit = (record: AttendanceRecord): boolean => {
+    if (canEditRecord) {
+      return canEditRecord(record);
+    }
+    // Fallback to isAdmin if canEditRecord is not provided
+    return currentStaff?.staff_position === 'Admin';
+  };
 
   // Status update handler
   const updateStatus = async (recordId: string, newStatus: string) => {
@@ -190,9 +205,9 @@ export const AttendanceTable = ({
   }
   
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       {hasFilters && (
-        <div className="flex justify-end">
+        <div className="flex justify-end px-4 py-2 flex-shrink-0 border-b">
           <button
             onClick={clearFilters}
             className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -203,80 +218,91 @@ export const AttendanceTable = ({
         </div>
       )}
       
-      <div className="overflow-x-auto rounded-lg">
-        <table className="w-full">
-          <AttendanceTableHeader
-            showStaffInfo={showStaffInfo}
-            filters={filters}
-            onFilterChange={setFilter}
-            onClearFilter={(col) => setFilter(col, '')}
-          />
-          
-          <tbody className="divide-y divide-gray-100">
-            {!paginatedRecords.length ? (
-              <tr>
-                <td colSpan={showStaffInfo ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
-                  No matching records found
-                </td>
-              </tr>
-            ) : (
-              paginatedRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                  {showStaffInfo && (
-                    <>
-                      <td className="px-6 py-3 text-sm font-mono text-gray-600">{record.staff_id}</td>
-                      <td className="px-6 py-3 text-sm font-medium text-gray-800">{record.staff?.staff_name}</td>
-                    </>
-                  )}
-                  <td className="px-6 py-3 text-sm text-gray-600">{record.date}</td>
-                  <td className="px-6 py-3">
-                    <StatusUpdateDropdown
-                      recordId={String(record.id)}
-                      currentStatus={record.attendance_status}
-                      isAdmin={isAdmin}
-                      isUpdating={updatingId === String(record.id)}
-                      showDropdown={openStatusDropdownId === String(record.id)}
-                      onStatusClick={(id) => setOpenStatusDropdownId(openStatusDropdownId === id ? null : id)}
-                      onStatusConfirm={updateStatus}
-                    />
-                  </td>
-                  <td className="px-6 py-3">
-                    <AttendanceTypeUpdateDropdown
-                      recordId={String(record.id)}
-                      currentType={record.attendance_type}
-                      isAdmin={isAdmin}
-                      isUpdating={updatingTypeId === String(record.id)}
-                      showDropdown={openTypeDropdownId === String(record.id)}
-                      availableTypes={availableTypes}
-                      onTypeClick={(id) => setOpenTypeDropdownId(openTypeDropdownId === id ? null : id)}
-                      onTypeConfirm={updateType}
-                    />
-                  </td>
-                  <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
-                    <RemarkCell remark={record.remark || '-'} />
+      {/* Scrollable table container */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        <div className="min-w-full inline-block align-middle">
+          <table className="min-w-full">
+            <AttendanceTableHeader
+              showStaffInfo={showStaffInfo}
+              filters={filters}
+              onFilterChange={setFilter}
+              onClearFilter={(col) => setFilter(col, '')}
+              sticky={fixedHeader}
+            />
+            
+            <tbody className="divide-y divide-gray-100">
+              {!paginatedRecords.length ? (
+                <tr>
+                  <td colSpan={showStaffInfo ? 6 : 5} className="px-6 py-12 text-center text-gray-500">
+                    No matching records found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paginatedRecords.map((record) => {
+                  const canEdit = checkCanEdit(record);
+                  return (
+                    <tr key={record.id} className="hover:bg-gray-50 transition-colors">
+                      {showStaffInfo && (
+                        <>
+                          <td className="px-6 py-3 text-sm font-mono text-gray-600">{record.staff_id}</td>
+                          <td className="px-6 py-3 text-sm font-medium text-gray-800">{record.staff?.staff_name}</td>
+                        </>
+                      )}
+                      <td className="px-6 py-3 text-sm text-gray-600">{record.date}</td>
+                      <td className="px-6 py-3">
+                        <StatusUpdateDropdown
+                          recordId={String(record.id)}
+                          currentStatus={record.attendance_status}
+                          isAdmin={canEdit}
+                          isUpdating={updatingId === String(record.id)}
+                          showDropdown={openStatusDropdownId === String(record.id)}
+                          onStatusClick={(id) => setOpenStatusDropdownId(openStatusDropdownId === id ? null : id)}
+                          onStatusConfirm={updateStatus}
+                        />
+                      </td>
+                      <td className="px-6 py-3">
+                        <AttendanceTypeUpdateDropdown
+                          recordId={String(record.id)}
+                          currentType={record.attendance_type}
+                          isAdmin={canEdit}
+                          isUpdating={updatingTypeId === String(record.id)}
+                          showDropdown={openTypeDropdownId === String(record.id)}
+                          availableTypes={availableTypes}
+                          staffId={record.staff_id}
+                          onTypeClick={(id) => setOpenTypeDropdownId(openTypeDropdownId === id ? null : id)}
+                          onTypeConfirm={updateType}
+                        />
+                      </td>
+                      <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
+                        <RemarkCell remark={record.remark || '-'} />
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
+      {/* Fixed pagination at bottom */}
       {attendance.length > 0 && (
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={pageSize}
-          startIndex={(page - 1) * pageSize}
-          onPageChange={setPage}
-          onItemsPerPageChange={(size) => {
-            setPageSize(size);
-            setPage(1);
-          }}
-          showFilteredBadge
-          isFiltered={hasFilters}
-        />
+        <div className="flex-shrink-0 border-t bg-white">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={pageSize}
+            startIndex={(page - 1) * pageSize}
+            onPageChange={setPage}
+            onItemsPerPageChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+            showFilteredBadge
+            isFiltered={hasFilters}
+          />
+        </div>
       )}
     </div>
   );

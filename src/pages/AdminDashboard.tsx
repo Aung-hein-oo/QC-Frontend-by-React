@@ -28,10 +28,10 @@ const AdminDashboard: React.FC = () => {
     addStaff,
     updateStaff,
     deleteStaff,
-    openAddModal,
-    openEditModal,
-    openViewModal,
-    closeModals,
+    openAdd: openAddModal,
+    openEdit: openEditModal,
+    openView: openViewModal,
+    close: closeModals,
   } = useStaffManagement();
 
   // Get current user from localStorage
@@ -75,8 +75,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleSubmit = async (formData: any) => {
     if (editingStaff) {
-      // Pass the database ID (primary key) instead of staff_id
-      await updateStaff(formData, editingStaff.id.toString());
+      await updateStaff(formData, editingStaff.id);
     } else {
       await addStaff(formData);
     }
@@ -105,7 +104,7 @@ const AdminDashboard: React.FC = () => {
   // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100/30 to-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 flex items-center justify-center">
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <div className="animate-spin w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full mx-auto mb-2"></div>
           <span className="text-gray-600">Loading...</span>
@@ -120,7 +119,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-300 via-gray-300 to-gray-300">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden">
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}
@@ -128,19 +127,24 @@ const AdminDashboard: React.FC = () => {
         onAddHoliday={handleHolidayImport}
       />
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Staff Table - Removed ActionsBar since actions are now in header */}
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-          <StaffTable 
-            staffList={staffList}
-            onView={openViewModal}
-            onEdit={openEditModal}
-            onDelete={deleteStaff}
-          />
-        </div>
+      <main className="flex-1 min-h-0 overflow-hidden">
+        <div className="h-full flex flex-col px-4 py-4">
+          {/* Table Container - Full Width with fixed header and scrollable body */}
+          <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col">
+            <StaffTable 
+              staffList={staffList}
+              onView={openViewModal}
+              onEdit={openEditModal}
+              onDelete={deleteStaff}
+              scrollable={true}
+              fixedHeader={true}
+            />
+          </div>
 
-        <div className="mt-6 text-xs text-center text-gray-500 border-t pt-6">
-          © 2026 Attendance Management System by MODOS. All rights reserved.
+          {/* Footer */}
+          <div className="flex-shrink-0 mt-4 text-xs text-center text-gray-500 border-t pt-4">
+            © 2026 Attendance Management System by MODOS. All rights reserved.
+          </div>
         </div>
       </main>
 

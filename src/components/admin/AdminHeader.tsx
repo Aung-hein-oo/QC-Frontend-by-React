@@ -102,14 +102,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-20 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+    <header className="bg-white/95 backdrop-blur-sm border-b shadow-sm flex-shrink-0">
+      <div className="w-full px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Calendar className="text-blue-600" size={28} />
           <h1 className="text-xl font-semibold text-gray-800">AMS Admin</h1>
-          <div className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-            Dashboard
-          </div>
         </div>
         
         <div className="flex items-center gap-4">

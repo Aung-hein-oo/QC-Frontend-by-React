@@ -1,6 +1,7 @@
 import React from 'react';
 import { StaffMember } from '../../types';
 import ProfileImage from './ProfileImage';
+import { User, Mail, Users, Building2, MapPin, Briefcase } from 'lucide-react';
 
 interface StaffInfoCardProps {
   staff: StaffMember;
@@ -12,7 +13,7 @@ const StaffInfoCard: React.FC<StaffInfoCardProps> = ({ staff }) => {
     if (staff.team?.team_name) {
       return staff.team.team_name;
     }
-    return staff.team_id ? `Team ID: ${staff.team_id}` : ' - ';
+    return staff.team_id ? `Team ID: ${staff.team_id}` : 'Not Assigned';
   };
 
   // Helper function to get department name
@@ -26,7 +27,7 @@ const StaffInfoCard: React.FC<StaffInfoCardProps> = ({ staff }) => {
     if (staff.team?.dept_id) {
       return `Department ID: ${staff.team.dept_id}`;
     }
-    return ' - ';
+    return 'Not Assigned';
   };
 
   // Helper function to get division name
@@ -40,78 +41,64 @@ const StaffInfoCard: React.FC<StaffInfoCardProps> = ({ staff }) => {
     if (staff.department?.div_id) {
       return `Division ID: ${staff.department.div_id}`;
     }
-    return ' - ';
+    return 'Not Assigned';
   };
 
   // Format floor display
   const getFloorDisplay = () => {
-    if (!staff.floor) return ' - ';
+    if (!staff.floor) return 'Not Specified';
     if (staff.floor.match(/\d+(st|nd|rd|th)/i)) {
       return staff.floor;
     }
     const floorNum = parseInt(staff.floor);
     if (isNaN(floorNum)) return staff.floor;
     
-    if (floorNum === 1) return `${floorNum}st`;
-    if (floorNum === 2) return `${floorNum}nd`;
-    if (floorNum === 3) return `${floorNum}rd`;
-    return `${floorNum}th`;
+    if (floorNum === 1) return `${floorNum}st Floor`;
+    if (floorNum === 2) return `${floorNum}nd Floor`;
+    if (floorNum === 3) return `${floorNum}rd Floor`;
+    return `${floorNum}th Floor`;
   };
 
   const infoRows = [
-    { label: 'Staff No', value: staff.staff_id },
-    { label: 'Team', value: getTeamName() },
-    { label: 'Department', value: getDepartmentName() },
-    { label: 'Division', value: getDivisionName() },
-    { label: 'Gender', value: staff.gender || 'Not Specified' },
-    { label: 'Floor', value: getFloorDisplay() },
-    { label: 'Mail', value: staff.staff_mail || 'Not Provided' },
+    { label: 'Staff ID', value: staff.staff_id, icon: User },
+    { label: 'Team', value: getTeamName(), icon: Users },
+    { label: 'Department', value: getDepartmentName(), icon: Building2 },
+    { label: 'Division', value: getDivisionName(), icon: MapPin },
+    { label: 'Gender', value: staff.gender || 'Not Specified', icon: User },
+    { label: 'Floor', value: getFloorDisplay(), icon: MapPin },
+    { label: 'Email', value: staff.staff_mail || 'Not Provided', icon: Mail },
   ];
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm w-full max-w-sm mx-auto">
-      <ProfileImage 
-        staffId={staff.staff_id}
-        gender={staff.gender}
-        staffName={staff.staff_name}
-      />
-      
-      <p className="text-sm text-slate-500 text-center mt-1">{staff.staff_position}</p>
-      
-      <div className="border-t my-4"></div>
-      
-      <div className="text-sm space-y-3">
-        {infoRows.map((row, index) => (
-          <div key={index} className="flex gap-3">
-            <div className="w-[100px] flex-shrink-0">
-              <span className="text-slate-500">{row.label}</span>
-            </div>
-            <div className="flex-shrink-0">
-              <span className="text-slate-500">:</span>
-            </div>
-            <div className="flex-1 min-w-0"> {/* Added min-w-0 to allow shrinking */}
-              <span className="font-medium text-slate-800 break-words whitespace-normal">
-                {row.value}
-              </span>
-            </div>
-          </div>
-        ))}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className="p-6">
+        <ProfileImage 
+          staffId={staff.staff_id}
+          gender={staff.gender}
+          staffName={staff.staff_name}
+        />
         
-        {staff.staff_permanent_status && (
-          <div className="flex gap-3">
-            <div className="w-[100px] flex-shrink-0">
-              <span className="text-slate-500">Status</span>
+        <div className="text-center mt-3">
+          <p className="text-sm text-blue-600 font-medium mt-1">{staff.staff_position}</p>
+        </div>
+        
+        <div className="border-t my-4"></div>
+        
+        <div className="space-y-3">
+          {infoRows.map((row, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <row.icon size={16} className="text-gray-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-500 block">{row.label}</span>
+                <span className="text-sm font-medium text-gray-800 break-words block">
+                  {row.value}
+                </span>
+              </div>
             </div>
-            <div className="flex-shrink-0">
-              <span className="text-slate-500">:</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-slate-800 break-words whitespace-normal">
-                {staff.staff_permanent_status}
-              </span>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

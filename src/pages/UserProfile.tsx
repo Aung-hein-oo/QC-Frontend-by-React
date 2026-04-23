@@ -24,40 +24,49 @@ const UserProfile: React.FC = () => {
     const leaveBalanceData = formatLeaveBalanceData(leaveBalance, staff.gender);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
-            <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
+        <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden">
+            <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm flex-shrink-0">
                 <Header />
             </header>
             
-            <main className="max-w-7xl mx-auto px-4 py-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <CalendarPicker />
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* LEFT PROFILE */}
-                    <div className="lg:col-span-3 flex justify-center">
-                        <StaffInfoCard staff={staff} />
+            <main className="flex-1 min-h-0 overflow-hidden">
+                <div className="h-full flex flex-col px-4 py-4">
+                    {/* Calendar Picker - Fixed at top */}
+                    <div className="flex-shrink-0 mb-4">
+                        <div className="flex justify-end">
+                            <CalendarPicker />
+                        </div>
+                    </div>
+                    
+                    {/* Scrollable Content Area - Full Width */}
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-4">
+                            {/* LEFT PROFILE - Full width on mobile, 3 cols on desktop */}
+                            <div className="lg:col-span-3">
+                                <StaffInfoCard staff={staff} />
+                            </div>
+
+                            {/* RIGHT CONTENT - Takes remaining space */}
+                            <div className="lg:col-span-9 space-y-6">
+                                <AttendanceStatsCards 
+                                    workingDays={6}
+                                    leaveDays={3}
+                                    halfLeaveDays={2}
+                                />
+
+                                <LeaveBalanceTable 
+                                    data={leaveBalanceData}
+                                    loading={leaveLoading}
+                                    error={leaveError}
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* RIGHT CONTENT */}
-                    <div className="lg:col-span-9 space-y-6">
-                        <AttendanceStatsCards 
-                            workingDays={6}
-                            leaveDays={3}
-                            halfLeaveDays={2}
-                        />
-
-                        <LeaveBalanceTable 
-                            data={leaveBalanceData}
-                            loading={leaveLoading}
-                            error={leaveError}
-                        />
+                    {/* Footer - Fixed at bottom */}
+                    <div className="flex-shrink-0 mt-4 text-xs text-center text-gray-500 border-t pt-4">
+                        © 2026 Attendance Management System by MODOS. All rights reserved.
                     </div>
-                </div>
-
-                <div className="mt-10 text-xs text-center text-slate-400 border-t pt-6">
-                    © 2026 Attendance Management System by MODOS. All rights reserved.
                 </div>
             </main>
         </div>
