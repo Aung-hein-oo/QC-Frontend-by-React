@@ -1,3 +1,4 @@
+// Updated Dropdown component - Hide My Profile for Admin
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, X, AlertCircle, LayoutDashboard } from "lucide-react";
@@ -122,7 +123,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
     if (!staff) return null;
 
     return (
-        <div ref={dropdownRef} className="relative">
+        <div ref={dropdownRef} className="relative z-30">
             <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
@@ -136,9 +137,9 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                 )}
             </button>
 
-            {/* Dropdown */}
+            {/* Dropdown with higher z-index and proper positioning */}
             {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden">
                     {/* Dashboard button - only shown when not on dashboard */}
                     {!isOnDashboard && (
                         <>
@@ -147,7 +148,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                                     navigate("/dashboard");
                                     setShowDropdown(false);
                                 }}
-                                className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
                             >
                                 <LayoutDashboard size={16} className="text-green-600" />
                                 <span>Dashboard</span>
@@ -162,7 +163,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                         <>
                             <button
                                 onClick={handleAdminClick}
-                                className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
                             >
                                 <Shield size={16} className="text-blue-600" />
                                 <span>Admin</span>
@@ -172,27 +173,31 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                         </>
                     )}
 
-                    <button
-                        onClick={() => {
-                            navigate("/user_profile");
-                            setShowDropdown(false);
-                        }}
-                        className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
-                    >
-                        <UserCircle size={16} />
-                        My Profile
-                    </button>
+                    {!isAdmin && (
+                        <button
+                            onClick={() => {
+                                navigate("/user_profile");
+                                setShowDropdown(false);
+                            }}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
+                        >
+                            <UserCircle size={16} />
+                            My Profile
+                        </button>
+                    )}
 
+                    {!isAdmin && (
                     <button
                         onClick={() => {
                             navigate("/leave");
                             setShowDropdown(false);
                         }}
-                        className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                        className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
                     >
                         <FileText size={16} />
                         Leave Request
                     </button>
+                    )}
 
                     {/* Leave Approve - only for staff IDs starting with 25 */}
                     {staff.staff_id?.startsWith("25") && (
@@ -201,7 +206,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                                 navigate("/leave_approve");
                                 setShowDropdown(false);
                             }}
-                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                            className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
                         >
                             <FileText size={16} />
                             Leave Approve
@@ -213,7 +218,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                             navigate("/change_password");
                             setShowDropdown(false);
                         }}
-                        className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                        className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
                     >
                         <Key size={16} />
                         Change Password
@@ -226,7 +231,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                             setShowDropdown(false);
                             setShowLogoutModal(true);
                         }}
-                        className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                         <LogOut size={16} />
                         Logout

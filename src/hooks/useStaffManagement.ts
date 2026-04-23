@@ -1,329 +1,217 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { StaffMember, StaffFormData, Division, Department, Team } from '../types';
 import { config } from '../utils/config';
 
 export const useStaffManagement = () => {
-  const [staffList, setStaffList] = useState<StaffMember[]>([]);
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
-  const [viewingStaff, setViewingStaff] = useState<StaffMember | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [generatedStaffId, setGeneratedStaffId] = useState<string>('');
+  const [state, setState] = useState({
+    staffList: [] as StaffMember[],
+    divisions: [] as Division[],
+    departments: [] as Department[],
+    teams: [] as Team[],
+    loading: true,
+    showModal: false,
+    showViewModal: false,
+    editingStaff: null as StaffMember | null,
+    viewingStaff: null as StaffMember | null,
+    isSubmitting: false,
+    generatedStaffId: '',
+  });
 
-  const fetchStaffList = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/staff/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setStaffList(data);
-    } catch (error) {
-      console.error('Error fetching staff:', error);
-    }
-  };
-
-  const fetchDivisions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/division`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setDivisions(data);
-    } catch (error) {
-      console.error('Error fetching divisions:', error);
-    }
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/department`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setDepartments(data);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-    }
-  };
-
-  const fetchTeams = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/team`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setTeams(data);
-    } catch (error) {
-      console.error('Error fetching teams:', error);
-    }
-  };
-
-  // Fetch departments based on selected division
-  const fetchDepartmentsByDivision = async (divisionId: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/department?division_id=${divisionId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setDepartments(data);
-    } catch (error) {
-      console.error('Error fetching departments by division:', error);
-    }
-  };
-
-  // Fetch teams based on selected department
-  const fetchTeamsByDepartment = async (departmentId: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/team?department_id=${departmentId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setTeams(data);
-    } catch (error) {
-      console.error('Error fetching teams by department:', error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchStaffList(),
-        fetchDivisions(),
-        fetchDepartments(),
-        fetchTeams(),
-      ]);
-      setLoading(false);
-    };
-    fetchAllData();
-  }, []);
-
-  // Function to generate the next staff ID based on gender
-  const generateStaffId = (gender: string): string => {
-    const prefix = gender === 'Male' ? '25' : '26';
-    
-    const sameGenderStaff = staffList.filter(staff => 
-      staff.staff_id && staff.staff_id.startsWith(prefix)
-    );
-    
-    const existingNumbers = sameGenderStaff
-      .map(staff => {
-        const match = staff.staff_id?.match(new RegExp(`^${prefix}-(\\d+)$`));
-        return match ? parseInt(match[1]) : 0;
-      })
-      .filter(num => num > 0);
-    
-    const nextNumber = existingNumbers.length > 0 
-      ? Math.max(...existingNumbers) + 1 
-      : 1;
-    
-    const formattedNumber = nextNumber.toString().padStart(5, '0');
-    
-    return `${prefix}-${formattedNumber}`;
-  };
-
-  const updateGeneratedStaffId = (gender: string) => {
-    if (gender && gender !== '') {
-      const newStaffId = generateStaffId(gender);
-      setGeneratedStaffId(newStaffId);
-    } else {
-      setGeneratedStaffId('');
-    }
-  };
-
-  const addStaff = async (formData: StaffFormData) => {
-    setIsSubmitting(true);
-    try {
-      const staffData = {
-        ...formData,
-        staff_id: formData.staff_id || generatedStaffId,
-      };
-      
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${config.apiUrl}/staff/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(staffData),
-      });
-      
-      if (response.ok) {
-        alert('Staff added successfully');
-        setShowModal(false);
-        await fetchStaffList();
-        return true;
-      } else {
-        const errorData = await response.json();
-        alert(`Failed to add staff: ${errorData.message || 'Unknown error'}`);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error adding staff:', error);
-      alert('Error adding staff member');
-      return false;
-    } finally {
-      setIsSubmitting(false);
-      setGeneratedStaffId('');
-    }
-  };
-
-  const updateStaff = async (formData: StaffFormData, staffDatabaseId: string) => {
-  console.log('=== UPDATE STAFF FUNCTION CALLED ===');
-  console.log('Received staffDatabaseId:', staffDatabaseId);
-  console.log('Type of staffDatabaseId:', typeof staffDatabaseId);
-  console.log('Form data being sent:', formData);
-  
-  setIsSubmitting(true);
-  try {
+  // Helper: API request with error handling
+  const apiRequest = async (url: string, options: RequestInit = {}) => {
     const token = localStorage.getItem('token');
-    const url = `${config.apiUrl}/staff/${staffDatabaseId}`;
-    console.log('PUT Request URL:', url);
-    
     const response = await fetch(url, {
-      method: 'PUT',
+      ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
+        ...options.headers,
       },
-      body: JSON.stringify(formData),
     });
     
-    console.log('Response status:', response.status);
-    console.log('Response OK:', response.ok);
+    if (!response.ok) {
+      const error = await response.json();
+      throw error;
+    }
+    return options.method === 'DELETE' ? null : response.json();
+  };
+
+  // Helper: Clean object
+  const clean = (data: any) => {
+    const cleaned = { ...data };
+    Object.keys(cleaned).forEach(key => 
+      (cleaned[key] === null || cleaned[key] === undefined) && delete cleaned[key]
+    );
+    return cleaned;
+  };
+
+  // Fetch functions
+  const fetchData = {
+    staff: useCallback(async () => {
+      const data = await apiRequest(`${config.apiUrl}/staff/`, { method: 'GET' });
+      setState(prev => ({ ...prev, staffList: data }));
+    }, []),
     
-    if (response.ok) {
-      const responseData = await response.json();
-      console.log('Update successful:', responseData);
-      alert('Staff updated successfully');
-      setShowModal(false);
-      await fetchStaffList();
+    divisions: useCallback(async () => {
+      const data = await apiRequest(`${config.apiUrl}/division`, { method: 'GET' });
+      setState(prev => ({ ...prev, divisions: data }));
+    }, []),
+    
+    departments: useCallback(async () => {
+      const data = await apiRequest(`${config.apiUrl}/department`, { method: 'GET' });
+      setState(prev => ({ ...prev, departments: data }));
+    }, []),
+    
+    teams: useCallback(async () => {
+      const data = await apiRequest(`${config.apiUrl}/team`, { method: 'GET' });
+      setState(prev => ({ ...prev, teams: data }));
+    }, []),
+    
+    departmentsByDivision: useCallback(async (divisionId: number) => {
+      const data = await apiRequest(`${config.apiUrl}/department?division_id=${divisionId}`, { method: 'GET' });
+      setState(prev => ({ ...prev, departments: data }));
+    }, []),
+    
+    teamsByDepartment: useCallback(async (departmentId: number) => {
+      const data = await apiRequest(`${config.apiUrl}/team?department_id=${departmentId}`, { method: 'GET' });
+      setState(prev => ({ ...prev, teams: data }));
+    }, []),
+  };
+
+  // Generate staff ID
+  const generateStaffId = useCallback((gender: string) => {
+    if (!gender) return '';
+    const prefix = gender === 'Male' ? '25' : '26';
+    const sameGender = state.staffList.filter(s => s.staff_id?.startsWith(prefix));
+    const numbers = sameGender.map(s => {
+      const match = s.staff_id?.match(new RegExp(`^${prefix}-(\\d+)$`));
+      return match ? parseInt(match[1]) : 0;
+    }).filter(n => n > 0);
+    const nextNum = (numbers.length ? Math.max(...numbers) + 1 : 1).toString().padStart(5, '0');
+    return `${prefix}-${nextNum}`;
+  }, [state.staffList]);
+
+  // CRUD Operations
+  const handleSubmit = async (formData: StaffFormData, isEdit: boolean, id?: number) => {
+    setState(prev => ({ ...prev, isSubmitting: true }));
+    
+    console.log('=== handleSubmit Debug ===');
+    console.log('isEdit:', isEdit);
+    console.log('formData received:', formData);
+    console.log('staff_permanent_status from form:', formData.staff_permanent_status);
+    
+    try {
+      // FIX: Don't hardcode 'No' - use the value from formData
+      const data = clean({
+        ...formData,
+        staff_id: !isEdit ? (formData.staff_id || state.generatedStaffId) : undefined,
+        // Remove the hardcoded 'No' and use the actual value from form
+        // staff_permanent_status is already in formData, so we don't need to set it again
+        staff_password: formData.staff_password || 'xxxxxx',
+      });
+      
+      // If editing and staff_permanent_status is not in formData, add it from editingStaff
+      if (isEdit && !data.staff_permanent_status && state.editingStaff) {
+        data.staff_permanent_status = state.editingStaff.staff_permanent_status || 'No';
+      }
+      
+      console.log('Data being sent to API:', data);
+      
+      const url = isEdit ? `${config.apiUrl}/staff/${id}` : `${config.apiUrl}/staff/`;
+      const method = isEdit ? 'PUT' : 'POST';
+      
+      const result = await apiRequest(url, { method, body: JSON.stringify(data) });
+      
+      console.log('API Response:', result);
+      
+      alert(`Staff ${isEdit ? 'updated' : 'added'} successfully`);
+      setState(prev => ({ ...prev, showModal: false, generatedStaffId: '' }));
+      await fetchData.staff();
       return true;
-    } else {
-      const errorData = await response.json();
-      console.error('Update failed with error:', errorData);
-      // Log the detailed validation errors
-      if (errorData.detail && Array.isArray(errorData.detail)) {
-        console.error('Validation errors:');
-        errorData.detail.forEach((err: any, index: number) => {
-          console.error(`Error ${index + 1}:`, err);
-          if (err.loc) console.error('  Location:', err.loc);
-          if (err.msg) console.error('  Message:', err.msg);
-          if (err.type) console.error('  Type:', err.type);
-        });
-        alert(`Failed to update staff:\n${errorData.detail.map((err: any) => err.msg).join('\n')}`);
-      } else {
-        alert(`Failed to update staff: ${errorData.message || 'Unknown error'}`);
-      }
+    } catch (error: any) {
+      console.error('Error in handleSubmit:', error);
+      const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
+      alert(`Failed to ${isEdit ? 'update' : 'add'} staff:\n${msg}`);
       return false;
-    }
-  } catch (error) {
-    console.error('Error updating staff:', error);
-    alert('Error updating staff member');
-    return false;
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-  const deleteStaff = async (staffDatabaseId: string) => {
-    console.log('=== DELETE STAFF FUNCTION CALLED ===');
-    console.log('Received staffDatabaseId:', staffDatabaseId);
-    console.log('Type of staffDatabaseId:', typeof staffDatabaseId);
-    
-    if (window.confirm('Are you sure you want to delete this staff member?')) {
-      try {
-        const token = localStorage.getItem('token');
-        const url = `${config.apiUrl}/staff/${staffDatabaseId}`;
-        console.log('DELETE Request URL:', url);
-        
-        const response = await fetch(url, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        console.log('Response status:', response.status);
-        console.log('Response OK:', response.ok);
-        
-        if (response.ok) {
-          console.log('Delete successful');
-          alert('Staff member deleted successfully');
-          await fetchStaffList();
-        } else {
-          const errorData = await response.json();
-          console.error('Delete failed:', errorData);
-          alert('Failed to delete staff member');
-        }
-      } catch (error) {
-        console.error('Error deleting staff:', error);
-        alert('Error deleting staff member');
-      }
-    } else {
-      console.log('Delete cancelled by user');
+    } finally {
+      setState(prev => ({ ...prev, isSubmitting: false }));
     }
   };
 
-  const openAddModal = () => {
-    setEditingStaff(null);
-    setGeneratedStaffId('');
-    setShowModal(true);
+  const addStaff = (formData: StaffFormData) => handleSubmit(formData, false);
+  const updateStaff = (formData: StaffFormData, id: number) => handleSubmit(formData, true, id);
+
+  const deleteStaff = async (id: number) => {
+    if (!window.confirm('Delete this staff member?')) return;
+    try {
+      await apiRequest(`${config.apiUrl}/staff/${id}`, { method: 'DELETE' });
+      alert('Staff deleted successfully');
+      await fetchData.staff();
+    } catch (error: any) {
+      const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
+      alert(`Failed to delete staff:\n${msg}`);
+    }
   };
 
-  const openEditModal = (staff: StaffMember) => {
-    console.log('=== OPEN EDIT MODAL ===');
-    console.log('Staff object:', staff);
-    console.log('Staff database ID (staff.id):', staff.id);
-    console.log('Staff custom ID (staff.staff_id):', staff.staff_id);
-    setEditingStaff(staff);
-    setShowModal(true);
+  // Modal controls
+  const modalControls = {
+    openAdd: () => setState(prev => ({ ...prev, editingStaff: null, generatedStaffId: '', showModal: true })),
+    openEdit: (staff: StaffMember) => {
+      console.log('=== Opening Edit Modal ===');
+      console.log('Staff data:', staff);
+      console.log('Staff permanent status:', staff.staff_permanent_status);
+      setState(prev => ({ ...prev, editingStaff: staff, showModal: true }));
+    },
+    openView: (staff: StaffMember) => setState(prev => ({ ...prev, viewingStaff: staff, showViewModal: true })),
+    close: () => setState(prev => ({ 
+      ...prev, 
+      showModal: false, 
+      showViewModal: false, 
+      editingStaff: null, 
+      viewingStaff: null, 
+      generatedStaffId: '' 
+    })),
   };
 
-  const openViewModal = (staff: StaffMember) => {
-    setViewingStaff(staff);
-    setShowViewModal(true);
-  };
-
-  const closeModals = () => {
-    setShowModal(false);
-    setShowViewModal(false);
-    setEditingStaff(null);
-    setViewingStaff(null);
-    setGeneratedStaffId('');
-  };
+  // Initial load
+  useEffect(() => {
+    const init = async () => {
+      setState(prev => ({ ...prev, loading: true }));
+      await Promise.all([
+        fetchData.staff(),
+        fetchData.divisions(),
+        fetchData.departments(),
+        fetchData.teams(),
+      ]);
+      setState(prev => ({ ...prev, loading: false }));
+    };
+    init();
+  }, []);
 
   return {
-    staffList,
-    divisions,
-    departments,
-    teams,
-    loading,
-    showModal,
-    showViewModal,
-    editingStaff,
-    viewingStaff,
-    isSubmitting,
-    generatedStaffId,
-    updateGeneratedStaffId,
-    fetchDepartmentsByDivision,
-    fetchTeamsByDepartment,
+    // Data
+    staffList: state.staffList,
+    divisions: state.divisions,
+    departments: state.departments,
+    teams: state.teams,
+    loading: state.loading,
+    editingStaff: state.editingStaff,
+    viewingStaff: state.viewingStaff,
+    isSubmitting: state.isSubmitting,
+    generatedStaffId: state.generatedStaffId,
+    showModal: state.showModal,
+    showViewModal: state.showViewModal,
+    
+    // Actions
+    updateGeneratedStaffId: (gender: string) => setState(prev => ({ 
+      ...prev, 
+      generatedStaffId: generateStaffId(gender) 
+    })),
+    fetchDepartmentsByDivision: fetchData.departmentsByDivision,
+    fetchTeamsByDepartment: fetchData.teamsByDepartment,
     addStaff,
     updateStaff,
     deleteStaff,
-    openAddModal,
-    openEditModal,
-    openViewModal,
-    closeModals,
+    ...modalControls,
   };
 };

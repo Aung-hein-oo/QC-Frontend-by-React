@@ -9,10 +9,10 @@ const Header: React.FC = () => {
     if (!staff) return null;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+        <div className="w-full px-4 py-3 flex justify-between items-center">
             <div onClick={() => navigate('/dashboard')} className="flex items-center gap-2 cursor-pointer">
                 <Calendar className="text-blue-600" size={28} />
-                <h1 className="text-xl font-semibold">AMS</h1>
+                <h1 className="text-xl font-semibold text-gray-800">AMS</h1>
             </div>
             <div className="flex items-center gap-4">
                 {/* User Info */}

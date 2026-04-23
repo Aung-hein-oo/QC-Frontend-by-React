@@ -14,109 +14,88 @@ interface StatusUpdateDropdownProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'Present', icon: CheckCircle, color: 'green' },
-  { value: 'Half Leave', icon: Clock, color: 'amber' },
-  { value: 'Leave', icon: XCircle, color: 'red' },
-  { value: 'Absence', icon: XCircle, color: 'gray' }
+  { value: 'Present', icon: CheckCircle, color: 'text-green-600 hover:bg-green-50' },
+  { value: 'Half Leave', icon: Clock, color: 'text-amber-600 hover:bg-amber-50' },
+  { value: 'Leave', icon: XCircle, color: 'text-red-600 hover:bg-red-50' },
+  { value: 'Absence', icon: XCircle, color: 'text-gray-600 hover:bg-gray-50' }
 ];
 
 const DROPDOWN_CONFIG = { height: 235, width: 220, padding: 10 };
 
-const COLOR_MAP = {
-  green: 'text-green-600 hover:bg-green-50',
-  amber: 'text-amber-600 hover:bg-amber-50',
-  red: 'text-red-600 hover:bg-red-50',
-  gray: 'text-gray-600 hover:bg-gray-50'
-};
-
 export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
-  recordId,
-  currentStatus,
-  isAdmin,
-  isUpdating,
-  showDropdown,
-  onStatusClick,
-  onStatusConfirm,
+  recordId, currentStatus, isAdmin, isUpdating, showDropdown,
+  onStatusClick, onStatusConfirm,
 }) => {
   const [modal, setModal] = useState<{ show: boolean; status: string | null }>({ show: false, status: null });
   const [dropdownCoords, setDropdownCoords] = useState({ top: 0, left: 0 });
-  const [animation, setAnimation] = useState<'entering' | 'visible' | 'exiting'>('entering');
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const updateDropdownPosition = () => {
+  // Position dropdown
+  useLayoutEffect(() => {
     if (!showDropdown || !buttonRef.current) return;
     
-    requestAnimationFrame(() => {
-      if (!buttonRef.current) return;
-      const rect = buttonRef.current.getBoundingClientRect();
+    const updatePosition = () => {
+      const rect = buttonRef.current!.getBoundingClientRect();
       const { height, width, padding } = DROPDOWN_CONFIG;
-      const { innerHeight, innerWidth } = window;
-      
-      const spaceBelow = innerHeight - rect.bottom;
+      const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
+      
       const top = spaceBelow < height + padding && spaceAbove >= height + padding 
         ? rect.top - height 
         : spaceBelow < height + padding 
-          ? Math.max(padding, innerHeight - height - padding)
+          ? Math.max(padding, window.innerHeight - height - padding)
           : rect.bottom;
       
-      const left = Math.min(Math.max(rect.left, padding), innerWidth - width - padding);
+      const left = Math.min(Math.max(rect.left, padding), window.innerWidth - width - padding);
       
       setDropdownCoords({ top, left });
       requestAnimationFrame(() => setDropdownVisible(true));
-    });
-  };
+    };
 
-  useLayoutEffect(() => {
-    if (showDropdown) {
-      setDropdownVisible(false);
-      const timeoutId = setTimeout(updateDropdownPosition, 0);
-      window.addEventListener('scroll', updateDropdownPosition, true);
-      window.addEventListener('resize', updateDropdownPosition);
-      return () => {
-        clearTimeout(timeoutId);
-        window.removeEventListener('scroll', updateDropdownPosition, true);
-        window.removeEventListener('resize', updateDropdownPosition);
-      };
-    }
     setDropdownVisible(false);
+    const timeoutId = setTimeout(updatePosition, 0);
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
   }, [showDropdown]);
 
+  // Handle click outside
   useEffect(() => {
+    if (!showDropdown) return;
+    
     const handleClickOutside = (e: MouseEvent) => {
-      if (showDropdown && dropdownRef.current && !dropdownRef.current.contains(e.target as Node) && 
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
           buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
         onStatusClick(recordId);
       }
     };
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showDropdown, recordId, onStatusClick]);
 
-  const handleStatusSelect = (status: string) => {
+  const handleSelect = (status: string) => {
     if (status === currentStatus) {
       onStatusClick(recordId);
       return;
     }
     setModal({ show: true, status });
-    setAnimation('entering');
-    requestAnimationFrame(() => requestAnimationFrame(() => setAnimation('visible')));
   };
 
-  const closeModal = (confirm = false) => {
-    setAnimation('exiting');
-    setTimeout(() => {
-      if (confirm && modal.status) {
-        onStatusConfirm(recordId, modal.status);
-      }
-      setModal({ show: false, status: null });
-      setAnimation('entering');
-      if (!confirm) onStatusClick(recordId);
-    }, 200);
+  const closeModal = (confirm: boolean) => {
+    if (confirm && modal.status) onStatusConfirm(recordId, modal.status);
+    setModal({ show: false, status: null });
+    if (!confirm) onStatusClick(recordId);
   };
 
+  // Escape key handler
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && modal.show) closeModal(false);
@@ -133,10 +112,10 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
         <div className="min-w-[100px]">
           <StatusBadge status={currentStatus} />
         </div>
+        
         <button
           onClick={() => onStatusClick(recordId)}
-          className="p-1 hover:bg-gray-100 rounded-md transition-colors flex-shrink-0 cursor-pointer"
-          title="Change status"
+          className="p-1 hover:bg-gray-100 rounded-md transition-colors cursor-pointer"
         >
           <Edit2 size={14} className="text-gray-500 hover:text-blue-600" />
         </button>
@@ -147,25 +126,25 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
             className={`dropdown-container ${dropdownVisible ? 'visible' : ''}`}
             style={{ top: dropdownCoords.top, left: dropdownCoords.left, width: DROPDOWN_CONFIG.width }}
           >
-            <div className="p-3 border-b bg-gradient-to-r from-gray-50 to-white">
-              <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Change Status</p>
+            <div className="p-3 border-b bg-gray-50">
+              <p className="text-xs font-semibold text-gray-700">Change Status</p>
             </div>
+            
             <div className="py-1">
               {STATUS_OPTIONS.map(({ value: status, icon: Icon, color }) => {
                 const isCurrent = status === currentStatus;
-                const colorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
                 return (
                   <button
                     key={status}
-                    onClick={() => handleStatusSelect(status)}
+                    onClick={() => handleSelect(status)}
                     disabled={isUpdating || isCurrent}
-                    className={`w-full text-left px-4 py-2.5 transition-all duration-150 group ${
-                      !isCurrent && !isUpdating ? colorClass.split(' ')[1] : ''
+                    className={`w-full text-left px-4 py-2.5 transition-colors ${
+                      !isCurrent && !isUpdating ? color : ''
                     } ${isCurrent ? 'bg-gray-50 cursor-default' : ''} ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <Icon size={16} className={`${colorClass?.split(' ')[0]} transition-transform group-hover:scale-110`} />
+                        <Icon size={16} className={!isCurrent && !isUpdating ? color.split(' ')[0] : 'text-gray-400'} />
                         <span className={`text-sm font-medium ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
                           {status}
                         </span>
@@ -191,36 +170,37 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
         )}
       </div>
 
+      {/* Confirmation Modal */}
       {modal.show && modal.status && (
-        <div className={`modal-container ${animation === 'visible' ? 'visible' : ''} ${animation === 'exiting' ? 'exiting' : ''}`}>
-          <div className="modal-backdrop" onClick={() => closeModal(false)} />
-          <div className="modal-content">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => closeModal(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
             <div className="flex justify-between items-center p-5 border-b">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <AlertCircle size={20} className="text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Confirm Status Change</h3>
+                  <h3 className="text-lg font-semibold">Confirm Status Change</h3>
                   <p className="text-sm text-gray-500">Update attendance status</p>
                 </div>
               </div>
               <button onClick={() => closeModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <X size={20} className="text-gray-500" />
+                <X size={20} />
               </button>
             </div>
             
             <div className="p-5">
-              <div className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-4 mb-4">
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-600 mb-3">You are about to change:</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">Current:</span>
+                    <span className="text-sm text-gray-700">Current:</span>
                     <StatusBadge status={currentStatus} />
                   </div>
-                  <span className="text-gray-400 text-xl">→</span>
+                  <span className="text-gray-400">→</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700">New:</span>
+                    <span className="text-sm text-gray-700">New:</span>
                     <StatusBadge status={modal.status} />
                   </div>
                 </div>
@@ -234,7 +214,7 @@ export const StatusUpdateDropdown: React.FC<StatusUpdateDropdownProps> = ({
               </div>
               
               <div className="flex gap-3">
-                <button onClick={() => closeModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                <button onClick={() => closeModal(false)} className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
                   Cancel
                 </button>
                 <button onClick={() => closeModal(true)} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center justify-center gap-2">

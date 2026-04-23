@@ -19,13 +19,11 @@ const LeaveBalanceTable: React.FC<LeaveBalanceTableProps> = ({
           Leave Balance Information
           {loading && <span className="ml-2 text-xs text-gray-500">(Loading...)</span>}
         </h3>
-        <div className="flex gap-2">
-          {error && (
-            <span className="text-xs text-red-600">
-              Error: {error}
-            </span>
-          )}
-        </div>
+        {error && (
+          <span className="text-xs text-red-600">
+            Error: {error}
+          </span>
+        )}
       </div>
 
       <div className="overflow-x-auto">

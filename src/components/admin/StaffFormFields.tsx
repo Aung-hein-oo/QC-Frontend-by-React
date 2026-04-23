@@ -26,19 +26,17 @@ export const StaffFormFields: React.FC<StaffFormFieldsProps> = ({
   onDivisionChange,
   onDepartmentChange,
 }) => {
+  // Check if staff has permanent status 'Yes' (only matters when editing)
+  const isPermanent = editingStaff?.staff_permanent_status === 'Yes';
+  const canChangeStatus = editingStaff && !isPermanent;
+
   return (
     <>
-      {/* Hidden fields for staff_permanent_status and staff_password */}
-      {/* These are automatically set and not shown to users */}
-      <input
-        type="hidden"
-        name="staff_permanent_status"
-        value={formData.staff_permanent_status || 'Permanent'}
-      />
+      {/* Hidden field for staff_password */}
       <input
         type="hidden"
         name="staff_password"
-        value={formData.staff_password || (editingStaff ? '' : 'xxxxxx')}
+        value={formData.staff_password || (editingStaff ? '' : 'default123')}
       />
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,6 +150,49 @@ export const StaffFormFields: React.FC<StaffFormFieldsProps> = ({
             <option value="3rd Floor">3rd Floor</option>
           </select>
         </div>
+        
+        {/* Permanent Status Field - Only show when editing and status is 'No' */}
+        {editingStaff && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Permanent Status
+              {isPermanent && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                  Permanent
+                </span>
+              )}
+            </label>
+            
+            {canChangeStatus ? (
+              // Editable for staff with 'No' status
+              <select
+                value={formData.staff_permanent_status || 'No'}
+                onChange={(e) => onFormChange({ staff_permanent_status: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isSubmitting}
+              >
+                <option value="No">No (Contract/Temporary)</option>
+                <option value="Yes">Yes (Permanent)</option>
+              </select>
+            ) : (
+              // Read-only display for staff with 'Yes' status
+              <div className="w-full px-3 py-2 bg-gray-50 border rounded-lg text-gray-700">
+                {formData.staff_permanent_status === 'Yes' ? 'Yes' : 'Contract/Temporary Staff'}
+              </div>
+            )}
+            
+            {canChangeStatus && (
+              <p className="text-xs text-blue-600 mt-1">
+                You can change this staff member to permanent status
+              </p>
+            )}
+            {isPermanent && (
+              <p className="text-xs text-gray-500 mt-1">
+                Permanent status cannot be changed
+              </p>
+            )}
+          </div>
+        )}
         
         {/* Division Field */}
         <div>

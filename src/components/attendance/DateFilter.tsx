@@ -3,11 +3,11 @@ import { Calendar, X } from 'lucide-react';
 type DateFilterProps = {
   selectedDate: string;
   onDateChange: (date: string) => void;
-  show: boolean;
+  // show: boolean;
 };
 
-export const DateFilter = ({ selectedDate, onDateChange, show }: DateFilterProps) => {
-  if (!show) return null;
+export const DateFilter = ({ selectedDate, onDateChange}: DateFilterProps) => {
+  // if (!show) return null;
   
   return (
     <div className="mb-4 inline-block bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border-l-4 border-blue-700 border">

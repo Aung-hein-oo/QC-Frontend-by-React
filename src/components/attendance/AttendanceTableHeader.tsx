@@ -15,6 +15,7 @@ interface AttendanceTableHeaderProps {
   filters: FilterState;
   onFilterChange: (column: string, value: string) => void;
   onClearFilter: (column: string) => void;
+  sticky?: boolean;
 }
 
 const filterColumns = [
@@ -33,12 +34,13 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
   filters,
   onFilterChange,
   onClearFilter,
+  sticky = false,
 }) => {
   return (
-    <thead className="bg-gray-50 border-b">
+    <thead className={`bg-gray-50 border-b ${sticky ? 'sticky top-0 z-10' : ''}`}>
       <tr>
         {showStaffInfo && (
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
             <div className="flex flex-col gap-2">
               <span>Staff ID</span>
               <div className="relative">
@@ -62,7 +64,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
         )}
         
         {showStaffInfo && (
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
             <div className="flex flex-col gap-2">
               <span>Name</span>
               <div className="relative">
@@ -85,7 +87,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
           </th>
         )}
         
-        <th className="px-6 py-4 text-left text-sm font-semibold">
+        <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
           <div className="flex flex-col gap-2">
             <span>Date</span>
             <div className="relative">
@@ -108,7 +110,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
           </div>
         </th>
         
-        <th className="px-6 py-4 text-left text-sm font-semibold">
+        <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
           <div className="flex flex-col gap-2">
             <span>Status</span>
             <div className="relative">
@@ -134,7 +136,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
           </div>
         </th>
         
-        <th className="px-6 py-4 text-left text-sm font-semibold">
+        <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
           <div className="flex flex-col gap-2">
             <span>Type</span>
             <div className="relative">
@@ -156,7 +158,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
           </div>
         </th>
         
-        <th className="px-6 py-4 text-left text-sm font-semibold">
+        <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
           <div className="flex flex-col gap-2">
             <span>Remark</span>
             <div className="relative">
