@@ -1,4 +1,3 @@
-// utils/positionRules.ts
 import { StaffMember, AttendanceRecord } from '../types';
 
 export const POSITION_RULES: Record<string, string> = {
@@ -21,7 +20,6 @@ export const getScope = (position: string): string => {
   return POSITION_RULES[position] || "self";
 };
 
-// Hierarchy levels for permission checking
 const POSITION_HIERARCHY: Record<string, number> = {
   "Admin": 10,
   "Chairman": 9,
@@ -38,78 +36,74 @@ const POSITION_HIERARCHY: Record<string, number> = {
   "Deputy Project Manager": 2,
 };
 
+const VIEW_ONLY_POSITIONS = [
+  "Senior Project Lead",
+  "Project Lead",
+  "Senior Software Engineer-1",
+  "Senior Software Engineer-2",
+  "Software Engineer",
+  "Software Development Trainer",
+  "Team Leader",
+  "Technical Leader",
+  "Senior Programmer",
+  "Programmer",
+  "Junior Programmer"
+];
+
 export const canEditAttendance = (
   currentUser: StaffMember,
   record: AttendanceRecord,
   allStaff: StaffMember[]
 ): boolean => {
   // Admin can edit everything
-  if (currentUser.staff_position === 'Admin') {
-    console.log('Admin permission granted for record:', record.id);
-    return true;
-  }
+  if (currentUser.staff_position === 'Admin') return true;
+
+  // View-only positions cannot edit anything
+  if (VIEW_ONLY_POSITIONS.includes(currentUser.staff_position)) return false;
 
   // Find the staff member who owns this record
-  const recordStaff = record.staff 
-    ? allStaff.find(s => s.staff_id === record.staff_id) 
-    : allStaff.find(s => s.staff_id === record.staff_id);
-    
-  if (!recordStaff) {
-    console.log('Record staff not found for record:', record.id);
-    return false;
+  let recordStaff: StaffMember | undefined;
+  
+  if (record.staff) {
+    recordStaff = allStaff.find(s => s.staff_id === record.staff_id) || record.staff;
+  } else {
+    recordStaff = allStaff.find(s => s.staff_id === record.staff_id);
   }
+  
+  if (!recordStaff) return false;
 
   // Users can edit their own records
-  if (currentUser.staff_id === recordStaff.staff_id) {
-    console.log('Self edit permission granted for record:', record.id);
-    return true;
-  }
+  if (currentUser.staff_id === recordStaff.staff_id) return true;
+
+  const currentUserScope = getScope(currentUser.staff_position);
+  
+  // Self scope users cannot edit others
+  if (currentUserScope === 'self') return false;
 
   const currentUserLevel = POSITION_HIERARCHY[currentUser.staff_position] || 0;
   const recordStaffLevel = POSITION_HIERARCHY[recordStaff.staff_position] || 0;
 
-  // Higher level users can edit lower level users' records
-  if (currentUserLevel > recordStaffLevel) {
-    // Check organization hierarchy based on position level
-    const currentUserScope = getScope(currentUser.staff_position);
-    
-    switch (currentUserScope) {
-      case 'all':
-        console.log('All scope edit permission granted for record:', record.id);
-        return true;
-      case 'division':
-        // Compare division_id as numbers
-        const canEditDivision = currentUser.division_id === recordStaff.division_id;
-        if (canEditDivision) {
-          console.log('Division scope edit permission granted for record:', record.id);
-        }
-        return canEditDivision;
-      case 'department':
-        // Compare department_id as numbers
-        const canEditDept = currentUser.department_id === recordStaff.department_id;
-        if (canEditDept) {
-          console.log('Department scope edit permission granted for record:', record.id);
-        }
-        return canEditDept;
-      case 'team':
-        // Compare team_id as numbers
-        const canEditTeam = currentUser.team_id === recordStaff.team_id;
-        if (canEditTeam) {
-          console.log('Team scope edit permission granted for record:', record.id);
-        }
-        return canEditTeam;
-      default:
-        console.log('No edit permission for record:', record.id);
-        return false;
-    }
-  }
+  // Must be higher level to edit others
+  if (currentUserLevel <= recordStaffLevel) return false;
 
-  console.log('Insufficient hierarchy level for edit permission:', {
-    currentUser: currentUser.staff_position,
-    currentUserLevel,
-    recordStaff: recordStaff.staff_position,
-    recordStaffLevel
-  });
-  
-  return false;
+  // Check organization scope with null checks
+  switch (currentUserScope) {
+    case 'all':
+      return true;
+    case 'division':
+      // Check if both have division_id and they match
+      return currentUser.division_id !== undefined && 
+             recordStaff.division_id !== undefined &&
+             currentUser.division_id === recordStaff.division_id;
+    case 'department':
+      return currentUser.department_id !== undefined && 
+             recordStaff.department_id !== undefined &&
+             currentUser.department_id === recordStaff.department_id;
+    case 'team':
+      return currentUser.team_id !== undefined && 
+             recordStaff.team_id !== undefined &&
+             currentUser.team_id === recordStaff.team_id;
+    default:
+      return false;
+  }
 };

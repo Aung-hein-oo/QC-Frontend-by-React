@@ -1,7 +1,6 @@
-// Updated Dropdown component - Hide My Profile for Admin
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, X, AlertCircle, LayoutDashboard } from "lucide-react";
+import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, X, AlertCircle, LayoutDashboard, Download } from "lucide-react";
 import { useAttendance } from "../../hooks/useAttendance";
 import { useNotification } from '../common/Notification';
 
@@ -74,9 +73,11 @@ const LogoutConfirmModal = ({
 
 interface DropdownProps {
   isAdmin?: boolean;
+  canExport?: boolean;
+  onExport?: () => void;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
+const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false, canExport = false, onExport }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { staff } = useAttendance();
@@ -106,6 +107,13 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
             navigate('/admin');
         } else {
             showNotification('Access denied. Only Admin users can access the management site.', 'error');
+        }
+        setShowDropdown(false);
+    };
+
+    const handleExport = () => {
+        if (onExport) {
+            onExport();
         }
         setShowDropdown(false);
     };
@@ -153,6 +161,21 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                                 <LayoutDashboard size={16} className="text-green-600" />
                                 <span>Dashboard</span>
                                 <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Home</span>
+                            </button>
+                            <hr className="my-1" />
+                        </>
+                    )}
+
+                    {/* Export button - only shown for users with export permission */}
+                    {canExport && (
+                        <>
+                            <button
+                                onClick={handleExport}
+                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
+                            >
+                                <Download size={16} className="text-green-600" />
+                                <span>Export Excel</span>
+                                <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Report</span>
                             </button>
                             <hr className="my-1" />
                         </>

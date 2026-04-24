@@ -1,0 +1,83 @@
+/* /assets/css/admin-header.css */
+/* This file fixes dropdown z-index issues with sticky table headers across all browsers */
+
+/* Force the header to create a proper stacking context */
+.admin-header-fix {
+  position: relative;
+  z-index: 1000;
+  isolation: isolate;
+}
+
+/* Ensure dropdown appears above everything */
+.admin-dropdown-fix {
+  position: absolute !important;
+  z-index: 99999 !important;
+  isolation: isolate !important;
+}
+
+/* Fix for WebKit browsers (Chrome, Edge, Safari) */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .admin-dropdown-fix {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Override any overflow clipping issues */
+.admin-container-fix {
+  overflow: visible !important;
+  position: relative;
+  z-index: auto;
+}
+
+/* Fix for sticky header stacking context */
+.sticky-header-fix {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: inherit;
+}
+
+/* Ensure the dropdown render layer is above sticky headers */
+.dropdown-portal-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+.dropdown-portal-layer > * {
+  pointer-events: auto;
+}
+
+/* Force hardware acceleration for dropdown */
+.dropdown-hardware-accelerated {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Fix for the main container overflow */
+.main-container-fix {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Ensure the table container doesn't trap the dropdown */
+.table-container-fix {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Force dropdown to break out of any overflow hidden containers */
+.dropdown-breakout {
+  position: fixed !important;
+  z-index: 99999 !important;
+}

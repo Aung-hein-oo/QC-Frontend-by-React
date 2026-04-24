@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Plus, Upload, Download, Calendar1, ChevronDown, ChevronRight, LogOut, User, Settings, X, AlertCircle, LayoutDashboard } from 'lucide-react';
+import '../../assets/css/admin-header.css'; // Import the CSS fix from assets folder
 
 // Logout Confirmation Modal Component
 const LogoutConfirmModal = ({ 
@@ -81,6 +82,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const menuDropdownRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,6 +98,17 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
     };
   }, []);
 
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (showMenuDropdown && menuButtonRef.current) {
+      const rect = menuButtonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [showMenuDropdown]);
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/');
@@ -102,7 +116,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b shadow-sm flex-shrink-0">
+    <header className="bg-white/95 backdrop-blur-sm border-b shadow-sm flex-shrink-0 admin-header-fix">
       <div className="w-full px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Calendar className="text-blue-600" size={28} />
@@ -111,8 +125,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
         
         <div className="flex items-center gap-4">
           {/* Single Menu Dropdown - Combines Navigation and Management */}
-          <div ref={menuDropdownRef} className="relative">
+          <div ref={menuDropdownRef} className="relative admin-container-fix">
             <button
+              ref={menuButtonRef}
               onClick={() => setShowMenuDropdown(!showMenuDropdown)}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
             >
@@ -126,7 +141,20 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
             </button>
 
             {showMenuDropdown && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+              <div 
+                className="admin-dropdown-fix dropdown-hardware-accelerated"
+                style={{
+                  position: 'fixed',
+                  top: `${dropdownPosition.top}px`,
+                  right: `${dropdownPosition.right}px`,
+                  width: '208px', // w-52 = 13rem = 208px
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  overflow: 'hidden'
+                }}
+              >
                 {/* Navigation Section */}
                 <div className="py-1">
                   <button
