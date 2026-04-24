@@ -1,8 +1,8 @@
-// Updated AttendanceHomepage - Fix dropdown visibility
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Calendar, User } from 'lucide-react';
+import { Calendar, User, Building2, Users, Flag, Loader, Globe } from 'lucide-react';
 import { useAttendance } from '../hooks/useAttendance';
+import { useOrganization } from '../hooks/useOrganization';
 import { AttendanceStats } from '../components/attendance/AttendanceStats';
 import { AttendanceTable } from '../components/attendance/AttendanceTable';
 import { DateFilter } from '../components/attendance/DateFilter';
@@ -13,6 +13,7 @@ import Dropdown from "../components/profile/Dropdown";
 const AttendanceHomepage = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  
   const { 
     staff, 
     attendance, 
@@ -28,31 +29,28 @@ const AttendanceHomepage = () => {
     canEditRecord
   } = useAttendance();
 
-  // Store staff data in localStorage when it's loaded
+  const { 
+    organizationLabel, 
+    organizationName, 
+    loading: orgLoading,
+    hasOrganization,
+    scope
+  } = useOrganization(
+    staff?.staff_position, 
+    staff?.division_id, 
+    staff?.department_id, 
+    staff?.team_id
+  );
+
   useEffect(() => {
     if (staff && staff.staff_id) {
-      console.log('Staff position loaded:', {
-        staff_id: staff.staff_id,
-        staff_name: staff.staff_name,
-        staff_position: staff.staff_position,
-        team_id: staff.team_id,
-        department_id: staff.department_id,
-        division_id: staff.division_id
-      });
-      
       const storedStaff = localStorage.getItem('staff');
       const parsedStoredStaff = storedStaff ? JSON.parse(storedStaff) : null;
       
       if (!parsedStoredStaff || parsedStoredStaff.staff_id !== staff.staff_id) {
         localStorage.setItem('staff', JSON.stringify(staff));
-        console.log('Staff data stored in localStorage:', staff);
       } else if (parsedStoredStaff.staff_position !== staff.staff_position) {
-        const updatedStaff = { ...parsedStoredStaff, ...staff };
-        localStorage.setItem('staff', JSON.stringify(updatedStaff));
-        console.log('Staff position updated in localStorage:', {
-          old_position: parsedStoredStaff.staff_position,
-          new_position: staff.staff_position
-        });
+        localStorage.setItem('staff', JSON.stringify({ ...parsedStoredStaff, ...staff }));
       }
     }
   }, [staff]);
@@ -67,14 +65,7 @@ const AttendanceHomepage = () => {
   const userScope = staff ? getScope(staff.staff_position) : 'self';
   const showFullTable = userScope !== 'self';
   const isAdmin = staff?.staff_position === 'Admin';
-  
-  console.log('AttendanceHomepage - Position check:', {
-    staff_position: staff?.staff_position,
-    userScope: userScope,
-    showFullTable: showFullTable,
-    isAdmin: isAdmin,
-    totalAttendanceRecords: attendance.length
-  });
+  const canExport = userScope !== 'self';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -97,16 +88,50 @@ const AttendanceHomepage = () => {
   
   if (!staff) return null;
 
+  const getOrgIcon = () => {
+    switch (scope) {
+      case 'division': return <Flag size={16} className="text-blue-600" />;
+      case 'department': return <Building2 size={16} className="text-green-600" />;
+      case 'team': return <Users size={16} className="text-purple-600" />;
+      default: return null;
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden">
       <header className="bg-white/95 backdrop-blur-sm border-b shadow-sm flex-shrink-0 z-20 relative">
         <div className="w-full px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Calendar className="text-blue-600" size={28} />
-            <h1 className="text-xl font-semibold text-gray-800">AMS</h1>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="text-blue-600" size={28} />
+              <h1 className="text-xl font-semibold text-gray-800">AMS</h1>
+            </div>
+            
+            {/* Organization Info beside AMS title */}
+            {hasOrganization && !orgLoading && organizationName && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
+                {getOrgIcon()}
+                <span className="text-xs text-gray-600">{organizationLabel}:</span>
+                <span className="text-xs font-medium text-gray-800">{organizationName}</span>
+              </div>
+            )}
+            
+            {!hasOrganization && scope === 'all' && !orgLoading && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
+                <Globe size={16} className="text-blue-600" />
+                <span className="text-xs font-medium text-gray-800">Full Access</span>
+              </div>
+            )}
+            
+            {orgLoading && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
+                <Loader size={14} className="text-blue-600 animate-spin" />
+                <span className="text-xs text-gray-500">Loading...</span>
+              </div>
+            )}
           </div>
+          
           <div className="flex items-center gap-4">
-            {/* User Info */}
             <div className="flex flex-col items-end gap-0.5">
               <div className="flex items-center gap-2">
                 <User size={18} className="text-gray-500" />
@@ -117,21 +142,20 @@ const AttendanceHomepage = () => {
                 {staff.staff_position}
               </div>
             </div>
-            
-            <Dropdown isAdmin={isAdmin} />
+            <Dropdown 
+              isAdmin={isAdmin} 
+              canExport={canExport}
+              onExport={() => showNotification('Export feature will be implemented with backend integration', 'info')}
+            />
           </div>
         </div>
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden px-4 py-4">
         <div className="h-full flex flex-col gap-4">
-          {/* Date Filter and Stats Cards on same row */}
           <div className="flex-shrink-0 flex items-start gap-4">
             <div className="flex-shrink-0">
-              <DateFilter 
-                selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
-              />
+              <DateFilter selectedDate={selectedDate} onDateChange={setSelectedDate} />
             </div>
             <div className="flex-1 min-w-0">
               <AttendanceStats 
@@ -143,7 +167,6 @@ const AttendanceHomepage = () => {
             </div>
           </div>
 
-          {/* Table Container with fixed header and scrollable body */}
           <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-hidden">
             <AttendanceTable 
               attendance={attendance}
@@ -156,12 +179,9 @@ const AttendanceHomepage = () => {
               updatingId={updatingId}
               updatingTypeId={updatingTypeId}
               availableTypes={availableTypes}
-              scrollable={true}
-              fixedHeader={true}
             />
           </div>
           
-          {/* Footer */}
           <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-4">
             © 2026 Attendance Management System by MODOS. All rights reserved.
           </div>

@@ -6,6 +6,7 @@ import StaffTable from '../components/admin/StaffTable';
 import StaffModal from '../components/admin/StaffModal';
 import ViewStaffModal from '../components/admin/ViewStaffModal';
 import { useNotification } from '../components/common/Notification';
+import '../assets/css/admin-header.css'; // Import the CSS fix from assets folder
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -119,7 +120,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden main-container-fix">
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}
@@ -130,7 +131,7 @@ const AdminDashboard: React.FC = () => {
       <main className="flex-1 min-h-0 overflow-hidden">
         <div className="h-full flex flex-col px-4 py-4">
           {/* Table Container - Full Width with fixed header and scrollable body */}
-          <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col">
+          <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-visible table-container-fix">
             <StaffTable 
               staffList={staffList}
               onView={openViewModal}
