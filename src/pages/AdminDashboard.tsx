@@ -86,10 +86,6 @@ const AdminDashboard: React.FC = () => {
     showNotification('Excel import functionality will be implemented soon', 'info');
   };
 
-  const handleExcelExport = () => {
-    showNotification('Excel export functionality will be implemented soon', 'info');
-  };
-
   const handleHolidayImport = () => {
     showNotification('Holiday import functionality will be implemented soon', 'info');
   };
@@ -124,7 +120,6 @@ const AdminDashboard: React.FC = () => {
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}
-        onExportExcel={handleExcelExport}
         onAddHoliday={handleHolidayImport}
       />
 

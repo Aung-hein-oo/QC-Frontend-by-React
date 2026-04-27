@@ -6,6 +6,7 @@ import { useNotification } from '../common/Notification';
 import { AttendanceTableHeader } from './AttendanceTableHeader';
 import { StatusUpdateDropdown } from './StatusUpdateDropdown';
 import { AttendanceTypeUpdateDropdown } from './AttendanceTypeUpdateDropdown';
+import { AttendanceTypeBadge } from './AttendanceTypeBadge';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
@@ -78,7 +79,7 @@ const ReadOnlyStatus = ({ status }: { status?: string }) => {
 };
 
 const ReadOnlyType = ({ type }: { type?: string }) => (
-  <span className="text-sm text-gray-600">{!type || type === 'Full Day' ? 'Full Day' : type}</span>
+  <AttendanceTypeBadge type={type || '-'} />
 );
 
 export const AttendanceTable = ({ 

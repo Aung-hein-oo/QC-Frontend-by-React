@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Plus, Upload, Download, Calendar1, ChevronDown, ChevronRight, LogOut, User, Settings, X, AlertCircle, LayoutDashboard } from 'lucide-react';
-import '../../assets/css/admin-header.css'; // Import the CSS fix from assets folder
+import { Calendar, Plus, Upload, Calendar1, ChevronDown, ChevronRight, LogOut, User, X, AlertCircle, LayoutDashboard } from 'lucide-react';
+import '../../assets/css/admin-header.css';
 
 // Logout Confirmation Modal Component
 const LogoutConfirmModal = ({ 
@@ -73,11 +73,10 @@ const LogoutConfirmModal = ({
 interface AdminHeaderProps {
   onAddStaff: () => void;
   onImportExcel: () => void;
-  onExportExcel: () => void;
   onAddHoliday: () => void;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, onExportExcel, onAddHoliday }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, onAddHoliday }) => {
   const navigate = useNavigate();
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -196,17 +195,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onAddStaff, onImportExcel, on
                   >
                     <Upload size={16} className="text-blue-600" />
                     <span>Import Excel</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      onExportExcel();
-                      setShowMenuDropdown(false);
-                    }}
-                    className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
-                  >
-                    <Download size={16} className="text-purple-600" />
-                    <span>Export Excel</span>
                   </button>
                   
                   <button
