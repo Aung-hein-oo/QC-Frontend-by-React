@@ -1,1 +1,67 @@
 @import "tailwindcss";
+
+@layer base {
+  /* Modal overlay styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  /* Modal content wrapper */
+  .modal-content-wrapper {
+    margin: auto;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Animation classes */
+  .animate-in {
+    animation-fill-mode: forwards !important;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  .zoom-in-95 {
+    animation: zoomIn 0.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes zoomIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Backdrop blur fix for Chrome/Edge */
+  .backdrop-blur-sm {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+}

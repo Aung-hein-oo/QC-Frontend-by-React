@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { Calendar, User, Building2, Users, Flag, Loader, Globe } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, User, Building2, Users, Flag, Loader } from 'lucide-react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useOrganization } from '../hooks/useOrganization';
 import { AttendanceStats } from '../components/attendance/AttendanceStats';
@@ -9,10 +9,12 @@ import { DateFilter } from '../components/attendance/DateFilter';
 import { getScope } from '../utils/positionRules';
 import { useNotification } from '../components/common/Notification';
 import Dropdown from "../components/profile/Dropdown";
+import LogoutConfirmModal from "../components/profile/LogoutConfirmModal";
 
 const AttendanceHomepage = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const { 
     staff, 
@@ -75,6 +77,13 @@ const AttendanceHomepage = () => {
     }
   }, [navigate, showNotification]);
 
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/');
+    setShowLogoutModal(false);
+    showNotification('You have been successfully logged out.', 'success');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 flex items-center justify-center">
@@ -116,13 +125,6 @@ const AttendanceHomepage = () => {
               </div>
             )}
             
-            {!hasOrganization && scope === 'all' && !orgLoading && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
-                <Globe size={16} className="text-blue-600" />
-                <span className="text-xs font-medium text-gray-800">Full Access</span>
-              </div>
-            )}
-            
             {orgLoading && (
               <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
                 <Loader size={14} className="text-blue-600 animate-spin" />
@@ -146,6 +148,7 @@ const AttendanceHomepage = () => {
               isAdmin={isAdmin} 
               canExport={canExport}
               onExport={() => showNotification('Export feature will be implemented with backend integration', 'info')}
+              onLogoutClick={() => setShowLogoutModal(true)}
             />
           </div>
         </div>
@@ -187,6 +190,13 @@ const AttendanceHomepage = () => {
           </div>
         </div>
       </main>
+
+      {/* Logout Modal - Rendered at the root level of the component */}
+      <LogoutConfirmModal 
+        isOpen={showLogoutModal}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 };
