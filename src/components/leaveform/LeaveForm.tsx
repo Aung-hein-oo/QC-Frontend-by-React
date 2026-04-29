@@ -8,6 +8,7 @@ interface LeaveFormProps {
     onCheckboxChange: (approverId: string, checked: boolean) => void;
     onFileChange: (fileName: string) => void;
     isReadOnly?: boolean;
+    staffGender?: string
 }
 
 export const LeaveForm: React.FC<LeaveFormProps> = ({
@@ -15,7 +16,7 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
     onInputChange,
     onCheckboxChange,
     onFileChange,
-    isReadOnly = false
+
 }) => {
     return (
         <div className="space-y-6">
@@ -46,11 +47,22 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                         required
                     >
                         <option value="">Select leave type</option>
-                        {LEAVE_TYPES.map(type => (
-                            <option key={type.value} value={type.value}>
-                                {type.label}
-                            </option>
-                        ))}
+                        {LEAVE_TYPES
+                            .filter(type => {
+                                const staffId = formData.staff_id || "";
+                                const starts25 = staffId.startsWith("25");
+                                const starts26 = staffId.startsWith("26");
+                                // Staff ID rules (new logic)
+                                if (type.value === "maternity" && starts25) return false;
+                                if (type.value === "paternity" && starts26) return false;
+
+                                return true;
+                            })
+                            .map(type => (
+                                <option key={type.value} value={type.value}>
+                                    {type.label}
+                                </option>
+                            ))}
                     </select>
                 </div>
 
@@ -61,8 +73,8 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     </label>
                     <input
                         type="date"
-                        name="start_date"
-                        value={formData.start_date}
+                        name="req_leave_date_from"
+                        value={formData.req_leave_date_from}
                         onChange={onInputChange}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                         required
@@ -76,10 +88,10 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     </label>
                     <input
                         type="date"
-                        name="end_date"
-                        value={formData.end_date}
+                        name="req_leave_date_to"
+                        value={formData.req_leave_date_to}
                         onChange={onInputChange}
-                        min={formData.start_date || new Date().toISOString().split("T")[0]}
+                        min={formData.req_leave_date_from || new Date().toISOString().split("T")[0]}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
                         required
                     />
@@ -139,7 +151,7 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                             <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600">
                                 <input
                                     type="checkbox"
-                                    checked={formData.approver.includes(approver.id)}
+                                    checked={formData.approved_by.includes(approver.id)}
                                     onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
                                     className="w-4 h-4 text-blue-600 border-slate-300 rounded"
                                 />

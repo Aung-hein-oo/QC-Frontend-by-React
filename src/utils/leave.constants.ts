@@ -8,10 +8,11 @@ export const LEAVE_TYPES = [
     { value: 'without', label: 'Leave Without Pay' },
     { value: 'married', label: 'Married Leave' },
     { value: 'maternity', label: 'Maternity Leave' },
+     { value: 'paternity', label: 'Paternity Leave' },
     { value: 'medical', label: 'Medical Leave' }
 ];
 
-export const ATTACHMENT_REQUIRED_TYPES = ['married', 'maternity', 'medical'];
+export const ATTACHMENT_REQUIRED_TYPES = ['married', 'maternity', 'medical', 'paternity'];
 
 export const APPROVERS = [
     { id: 'makay', name: 'Ma Kay' },

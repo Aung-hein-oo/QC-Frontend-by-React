@@ -1,14 +1,15 @@
 export interface LeaveRequestType {
     staff_id: string;
-    start_date: string;
-    end_date: string;
+    req_leave_date_from: string;
+    req_leave_date_to: string;
     leave_type: string;
     reason: string;
-    approver: string[];
+    approved_by: string[];
     leave_status?: string;
     attachment: string;
     total_leave_day: number;
     apply_date: string;
+    form_status: string;
 }
 
 export interface LeaveTableRow {
@@ -20,4 +21,6 @@ export interface LeaveTableRow {
     toDate: string;
     reason: string;
     status: string;
+    total: string;
+    approved_by: string[];
 }
