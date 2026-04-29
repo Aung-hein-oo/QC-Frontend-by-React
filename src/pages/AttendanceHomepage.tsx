@@ -120,8 +120,8 @@ const AttendanceHomepage = () => {
             {hasOrganization && !orgLoading && organizationName && (
               <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md">
                 {getOrgIcon()}
-                <span className="text-xs text-gray-600">{organizationLabel}:</span>
-                <span className="text-xs font-medium text-gray-800">{organizationName}</span>
+                <span className="text-lg text-gray-600">{organizationLabel}:</span>
+                <span className="text-lg font-medium text-gray-800">{organizationName}</span>
               </div>
             )}
             
@@ -147,7 +147,7 @@ const AttendanceHomepage = () => {
             <Dropdown 
               isAdmin={isAdmin} 
               canExport={canExport}
-              onExport={() => showNotification('Export feature will be implemented with backend integration', 'info')}
+              selectedDate={selectedDate}
               onLogoutClick={() => setShowLogoutModal(true)}
             />
           </div>

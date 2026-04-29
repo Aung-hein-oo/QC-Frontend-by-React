@@ -1,26 +1,28 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, LayoutDashboard, Download } from "lucide-react";
+import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, LayoutDashboard, Download, Loader } from "lucide-react";
 import { useAttendance } from "../../hooks/useAttendance";
 import { useNotification } from '../common/Notification';
+import { useExcelExport } from "../../hooks/useExcelExport";
 
 interface DropdownProps {
   isAdmin?: boolean;
   canExport?: boolean;
-  onExport?: () => void;
+  selectedDate?: string;
   onLogoutClick?: () => void;
 }
 
 const Dropdown: React.FC<DropdownProps> = ({ 
   isAdmin = false, 
   canExport = false, 
-  onExport,
+  selectedDate,
   onLogoutClick 
 }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { staff } = useAttendance();
     const { showNotification } = useNotification();
+    const { exportAttendance, exporting } = useExcelExport();
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -49,11 +51,23 @@ const Dropdown: React.FC<DropdownProps> = ({
         setShowDropdown(false);
     };
 
-    const handleExport = () => {
-        if (onExport) {
-            onExport();
-        }
+    const handleExport = async () => {
         setShowDropdown(false);
+        
+        // If a specific date is selected, export only that date
+        if (selectedDate) {
+            await exportAttendance({ date: selectedDate });
+        } else {
+            // Otherwise export current month
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const startDate = firstDay.toISOString().split('T')[0];
+            const endDate = lastDay.toISOString().split('T')[0];
+            
+            await exportAttendance({ startDate, endDate });
+        }
     };
 
     const handleLogoutClick = () => {
@@ -73,6 +87,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                disabled={exporting}
             >
                 <User size={16} />
                 Menu
@@ -109,11 +124,21 @@ const Dropdown: React.FC<DropdownProps> = ({
                         <>
                             <button
                                 onClick={handleExport}
-                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors"
+                                disabled={exporting}
+                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Download size={16} className="text-green-600" />
-                                <span>Export Excel</span>
-                                <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Report</span>
+                                {exporting ? (
+                                    <>
+                                        <Loader size={16} className="text-green-600 animate-spin" />
+                                        <span>Exporting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={16} className="text-green-600" />
+                                        <span>Export Excel</span>
+                                        <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Report</span>
+                                    </>
+                                )}
                             </button>
                             <hr className="my-1" />
                         </>
