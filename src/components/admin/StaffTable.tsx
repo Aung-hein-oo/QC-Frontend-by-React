@@ -131,7 +131,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
       )}
       
       {/* Scrollable Table Container */}
-      <div className={`flex-1 min-h-0 ${scrollable ? 'overflow-auto' : 'overflow-x-auto'}`}>
+      <div className={`flex-1 min-h-0 ${scrollable ? 'overflow-y-auto' : 'overflow-x-auto'}`}>
         <div className="min-w-full inline-block align-middle">
           <table className="min-w-full">
             <thead className={`bg-gray-50 border-b ${fixedHeader ? 'sticky top-0 z-10' : ''}`}>

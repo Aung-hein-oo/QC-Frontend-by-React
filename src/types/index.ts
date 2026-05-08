@@ -62,10 +62,7 @@ export type AttendanceRecord = {
   attendance_status: string;
   attendance_type?: string;
   remark?: string;
-  staff?: {
-    staff_name: string;
-    staff_position: string;
-  };
+  staff?: StaffMember;
 };
 
 export interface BaseLeaveBalance {

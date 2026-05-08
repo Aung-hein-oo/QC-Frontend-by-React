@@ -1,89 +1,37 @@
-// Updated Dropdown component - Hide My Profile for Admin
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, X, AlertCircle, LayoutDashboard } from "lucide-react";
+import { FileText, LogOut, UserCircle, Key, ChevronDown, ChevronRight, User, Shield, LayoutDashboard, Download, Loader } from "lucide-react";
 import { useAttendance } from "../../hooks/useAttendance";
 import { useNotification } from '../common/Notification';
-
-// Logout Confirmation Modal Component
-const LogoutConfirmModal = ({ 
-  isOpen, 
-  onConfirm, 
-  onCancel 
-}: { 
-  isOpen: boolean; 
-  onConfirm: () => void; 
-  onCancel: () => void;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-5 border-b">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-              <LogOut size={20} className="text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Confirm Logout</h3>
-              <p className="text-sm text-gray-500">Sign out from your account</p>
-            </div>
-          </div>
-          <button
-            onClick={onCancel}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={20} className="text-gray-500" />
-          </button>
-        </div>
-        
-        <div className="p-5">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-amber-800 font-medium mb-1">Are you sure you want to logout?</p>
-                <p className="text-xs text-amber-700">
-                  You will need to login again to access your account and attendance records.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-            >
-              Stay Logged In
-            </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
-            >
-              <LogOut size={18} />
-              Logout
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { useExcelExport } from "../../hooks/useExcelExport";
 
 interface DropdownProps {
   isAdmin?: boolean;
+  canExport?: boolean;
+  selectedDate?: string;
+  onLogoutClick?: () => void;
 }
 
-const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
+const Dropdown: React.FC<DropdownProps> = ({ 
+  isAdmin = false, 
+  canExport = false, 
+  selectedDate,
+  onLogoutClick 
+}) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { staff } = useAttendance();
     const { showNotification } = useNotification();
+    const { exportAttendance, exporting } = useExcelExport();
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    // Define positions that can approve leaves
+    const canApproveLeaves = (): boolean => {
+        if (!staff) return false;
+        const approvePositions = ["Admin", "General Manager", "Deputy General Manager"];
+        return approvePositions.includes(staff.staff_position);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -110,11 +58,30 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
         setShowDropdown(false);
     };
 
-    const handleLogout = () => {
-        localStorage.clear();
-        navigate('/');
-        setShowLogoutModal(false);
-        showNotification('You have been successfully logged out.', 'success');
+    const handleExport = async () => {
+        setShowDropdown(false);
+        
+        // If a specific date is selected, export only that date
+        if (selectedDate) {
+            await exportAttendance({ date: selectedDate });
+        } else {
+            // Otherwise export current month
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            const startDate = firstDay.toISOString().split('T')[0];
+            const endDate = lastDay.toISOString().split('T')[0];
+            
+            await exportAttendance({ startDate, endDate });
+        }
+    };
+
+    const handleLogoutClick = () => {
+        setShowDropdown(false);
+        if (onLogoutClick) {
+            onLogoutClick();
+        }
     };
 
     // Check if current path is dashboard or home
@@ -123,10 +90,11 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
     if (!staff) return null;
 
     return (
-        <div ref={dropdownRef} className="relative z-30">
+        <div ref={dropdownRef} className="relative">
             <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+                disabled={exporting}
             >
                 <User size={16} />
                 Menu
@@ -153,6 +121,31 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                                 <LayoutDashboard size={16} className="text-green-600" />
                                 <span>Dashboard</span>
                                 <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Home</span>
+                            </button>
+                            <hr className="my-1" />
+                        </>
+                    )}
+
+                    {/* Export button - only shown for users with export permission */}
+                    {canExport && (
+                        <>
+                            <button
+                                onClick={handleExport}
+                                disabled={exporting}
+                                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {exporting ? (
+                                    <>
+                                        <Loader size={16} className="text-green-600 animate-spin" />
+                                        <span>Exporting...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Download size={16} className="text-green-600" />
+                                        <span>Export Excel</span>
+                                        <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Report</span>
+                                    </>
+                                )}
                             </button>
                             <hr className="my-1" />
                         </>
@@ -199,8 +192,8 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                     </button>
                     )}
 
-                    {/* Leave Approve - only for staff IDs starting with 25 */}
-                    {staff.staff_id?.startsWith("25") && (
+                    {/* Leave Approve - only for Admin, General Manager, and Deputy General Manager */}
+                    {canApproveLeaves() && (
                         <button
                             onClick={() => {
                                 navigate("/leave_approve");
@@ -227,10 +220,7 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                     <hr className="my-1" />
 
                     <button
-                        onClick={() => {
-                            setShowDropdown(false);
-                            setShowLogoutModal(true);
-                        }}
+                        onClick={handleLogoutClick}
                         className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     >
                         <LogOut size={16} />
@@ -238,12 +228,6 @@ const Dropdown: React.FC<DropdownProps> = ({ isAdmin = false }) => {
                     </button>
                 </div>
             )}
-
-            <LogoutConfirmModal 
-                isOpen={showLogoutModal}
-                onConfirm={handleLogout}
-                onCancel={() => setShowLogoutModal(false)}
-            />
         </div>
     );
 };

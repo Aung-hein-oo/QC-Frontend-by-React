@@ -3,6 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { config } from '../utils/config';
 
+// Token expiration time (24 hours in milliseconds)
+const TOKEN_EXPIRY_DURATION = 24 * 60 * 60 * 1000;
+
+// Helper function to set token with expiry
+const setTokenWithExpiry = (token: string): void => {
+  const expiryTime = Date.now() + TOKEN_EXPIRY_DURATION;
+  localStorage.setItem('token', token);
+  localStorage.setItem('tokenExpiry', expiryTime.toString());
+};
+
+// Helper function to clear all session data
+const clearSession = (): void => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('tokenExpiry');
+  localStorage.removeItem('staff');
+  localStorage.removeItem('staff_id');
+  localStorage.removeItem('attendance');
+};
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [staffId, setStaffId] = useState('');
@@ -10,6 +29,11 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Clear any existing session before login
+  React.useEffect(() => {
+    clearSession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +55,30 @@ const Login: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('staff_id', staffId);  
+        // Set token with 24-hour expiry
+        setTokenWithExpiry(data.access_token);
+        localStorage.setItem('staff_id', staffId);
+        
+        // If your API returns user/staff data, store it as well
+        if (data.staff) {
+          localStorage.setItem('staff', JSON.stringify(data.staff));
+        } else {
+          // If user data is not returned, you might need to fetch it separately
+          try {
+            const userResponse = await fetch(`${config.apiUrl}/staff/${staffId}`, {
+              headers: {
+                'Authorization': `Bearer ${data.access_token}`
+              }
+            });
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              localStorage.setItem('staff', JSON.stringify(userData));
+            }
+          } catch (err) {
+            console.error('Error fetching user data:', err);
+          }
+        }
+        
         navigate('/dashboard');
       } else {
         setError(data.message || data.error || data.detail || 'Invalid Staff ID or password');

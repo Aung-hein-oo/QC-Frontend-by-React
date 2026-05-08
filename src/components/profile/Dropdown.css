@@ -1,21 +1,36 @@
 @layer base {
   /* 1. Fixes backdrop-blur for Chrome/Edge */
   .backdrop-blur-sm {
-    -webkit-backdrop-filter: blur(4px); /* Chrome/Safari prefix */
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
   }
 
-  /* 2. Prevents parent containers from clipping the fixed modal */
-  body {
-    isolation: isolate; 
+  /* 2. Ensures the modal container fills the viewport across all engines */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* High z-index to stay above everything */
+    background-color: rgba(0, 0, 0, 0.5);
   }
 
-  /* 3. Ensures the modal container fills the viewport in Chromium */
-  .fixed.inset-0 {
-    height: 100dvh; /* Dynamic viewport height for mobile Chrome/Edge */
-  }
-  
+  /* 3. Animation Fixes */
   .animate-in {
-  animation-fill-mode: forwards !important;
-}
+    animation-fill-mode: forwards !important;
+  }
+
+  /* 4. Cross-browser centering hack for Chromium */
+  .modal-content-wrapper {
+    margin: auto;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }
