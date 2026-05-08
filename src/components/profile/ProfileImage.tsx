@@ -44,7 +44,7 @@ const ProfileImage: React.FC<ProfileImageProps> = ({ staffId, gender, staffName 
           alt={staffName || "Profile"}
           className="w-33 h-33 rounded-full object-cover mb-3 border-2 border-black-500"
         />
-        <label className="absolute bottom-3 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700">
+        {/* <label className="absolute bottom-3 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700">
           <Pencil size={14} />
           <input
             type="file"
@@ -52,7 +52,7 @@ const ProfileImage: React.FC<ProfileImageProps> = ({ staffId, gender, staffName 
             className="hidden"
             onChange={handleImageUpload}
           />
-        </label>
+        </label> */}
       </div>
       <h2 className="text-lg font-semibold text-slate-800">
         {staffName}

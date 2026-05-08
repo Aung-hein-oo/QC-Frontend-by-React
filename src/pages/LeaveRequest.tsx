@@ -12,12 +12,12 @@ import { useStaffManagement } from '../hooks/useStaffManagement';
 
 const LeaveRequest: React.FC = () => {
     const { staff } = useAttendance();
-
     const { staffList } = useStaffManagement();
+    
     // Fetch and filter leave records
     const { leaveRecords, loading, refreshLeave } = useLeaveData(staff?.staff_id);
 
-    // 3. Setup leave request logic
+    // Setup leave request logic
     const {
         formData,
         error,
@@ -91,7 +91,7 @@ const LeaveRequest: React.FC = () => {
     };
 
     const handleDelete = (row: LeaveTableRow) => {
-        setSelectedRow(row);   // ✅ no error
+        setSelectedRow(row);
         setShowDelete(true);
     };
 
@@ -131,8 +131,8 @@ const LeaveRequest: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
-            <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
+        <div className="h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 flex flex-col">
+            <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10 flex-shrink-0">
                 <Header />
             </header>
 
@@ -164,7 +164,6 @@ const LeaveRequest: React.FC = () => {
                             ADD 
                         </button>
                     </div>
-                </div>
 
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <LeaveTable data={tableData} onEdit={handleEdit} onDelete={handleDelete} staffList={staffList || []} />
@@ -209,6 +208,41 @@ const LeaveRequest: React.FC = () => {
                     © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
                 </div>
             </main>
+
+            <LeaveModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSubmit={handleSubmit}
+                formData={formData}
+                onInputChange={handleInputChange}
+                onCheckboxChange={handleCheckboxChange}
+                onFileChange={handleFileChange}
+                error={error}
+                title="Submit Leave Request"
+                submitButtonText="Submit"
+            />
+
+            <LeaveModal
+                isOpen={showUpdate}
+                onClose={() => setShowUpdate(false)}
+                onSubmit={handleSubmit}
+                formData={formData}
+                onInputChange={handleInputChange}
+                onCheckboxChange={handleCheckboxChange}
+                onFileChange={handleFileChange}
+                error={error}
+                title="Update Leave Request"
+                submitButtonText="Update"
+            />
+
+            <DeleteModal
+                isOpen={showDelete}
+                onClose={() => {
+                    setShowDelete(false);
+                    setSelectedRow(null);
+                }}
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 };

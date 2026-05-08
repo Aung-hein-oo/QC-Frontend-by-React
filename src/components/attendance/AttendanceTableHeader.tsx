@@ -18,15 +18,6 @@ interface AttendanceTableHeaderProps {
   sticky?: boolean;
 }
 
-const filterColumns = [
-  { key: 'staff_id', label: 'Staff ID', showWhen: true },
-  { key: 'staff_name', label: 'Name', showWhen: true },
-  { key: 'date', label: 'Date', showWhen: true, placeholder: 'YYYY-MM-DD' },
-  { key: 'attendance_status', label: 'Status', showWhen: true, isSelect: true },
-  { key: 'attendance_type', label: 'Type', showWhen: true },
-  { key: 'remark', label: 'Remark', showWhen: true },
-];
-
 const statusOptions = ['Present', 'Half Leave', 'Leave', 'Absence'];
 
 export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
@@ -49,6 +40,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                   value={filters.staff_id || ''}
                   onChange={(e) => onFilterChange('staff_id', e.target.value)}
                   className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Search..."
                 />
                 {filters.staff_id && (
                   <button
@@ -73,6 +65,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                   value={filters.staff_name || ''}
                   onChange={(e) => onFilterChange('staff_name', e.target.value)}
                   className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Search..."
                 />
                 {filters.staff_name && (
                   <button
@@ -87,25 +80,19 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
           </th>
         )}
         
+        {/* Date column with calendar dropdown */}
         <th className="px-6 py-4 text-left text-sm font-semibold bg-gray-50">
           <div className="flex flex-col gap-2">
-            <span>Date</span>
+            <div className="flex items-center justify-between">
+              <span>Date</span>
+            </div>
             <div className="relative">
               <input
-                type="text"
+                type="date"
                 value={filters.date || ''}
                 onChange={(e) => onFilterChange('date', e.target.value)}
                 className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="YYYY-MM-DD"
               />
-              {filters.date && (
-                <button
-                  onClick={() => onClearFilter('date')}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={12} />
-                </button>
-              )}
             </div>
           </div>
         </th>
@@ -145,6 +132,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                 value={filters.attendance_type || ''}
                 onChange={(e) => onFilterChange('attendance_type', e.target.value)}
                 className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Search..."
               />
               {filters.attendance_type && (
                 <button
@@ -167,6 +155,7 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                 value={filters.remark || ''}
                 onChange={(e) => onFilterChange('remark', e.target.value)}
                 className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Search..."
               />
               {filters.remark && (
                 <button

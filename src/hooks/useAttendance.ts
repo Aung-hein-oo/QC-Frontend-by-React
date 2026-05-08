@@ -6,11 +6,11 @@ import { config } from '../utils/config';
 
 export const useAttendance = () => {
   const navigate = useNavigate();
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
   const [allStaffList, setAllStaffList] = useState<StaffMember[]>([]);
   const [staff, setStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string>(''); // Start with empty string (no filter)
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [updatingTypeId, setUpdatingTypeId] = useState<string | null>(null);
   const [availableTypes, setAvailableTypes] = useState<string[]>([]);
@@ -60,7 +60,7 @@ export const useAttendance = () => {
       });
       const attData = await attRes.json();
       const rawAttendance = Array.isArray(attData) ? attData : attData.data || [];
-      const allAttendance: AttendanceRecord[] = rawAttendance.map((record: any) => ({
+      const allAttendanceRecords: AttendanceRecord[] = rawAttendance.map((record: any) => ({
         ...record, 
         staff_name: record.staff?.staff_name || 'Unknown',
         staff: record.staff || staffList.find((s: StaffMember) => s.staff_id === record.staff_id)
@@ -70,27 +70,28 @@ export const useAttendance = () => {
       let filtered: AttendanceRecord[] = [];
       
       if (scope === 'all') {
-        filtered = allAttendance;
+        filtered = allAttendanceRecords;
       } else if (scope === 'division') {
-        filtered = allAttendance.filter((r: AttendanceRecord) => {
+        filtered = allAttendanceRecords.filter((r: AttendanceRecord) => {
           const recordStaff = staffList.find((s: StaffMember) => s.staff_id === r.staff_id);
           return recordStaff?.division_id === current.division_id;
         });
       } else if (scope === 'department') {
-        filtered = allAttendance.filter((r: AttendanceRecord) => {
+        filtered = allAttendanceRecords.filter((r: AttendanceRecord) => {
           const recordStaff = staffList.find((s: StaffMember) => s.staff_id === r.staff_id);
           return recordStaff?.department_id === current.department_id;
         });
       } else if (scope === 'team') {
-        filtered = allAttendance.filter((r: AttendanceRecord) => {
+        filtered = allAttendanceRecords.filter((r: AttendanceRecord) => {
           const recordStaff = staffList.find((s: StaffMember) => s.staff_id === r.staff_id);
           return recordStaff?.team_id === current.team_id;
         });
       } else {
-        filtered = allAttendance.filter((r: AttendanceRecord) => r.staff_id === staffId);
+        filtered = allAttendanceRecords.filter((r: AttendanceRecord) => r.staff_id === staffId);
       }
       
-      setAttendance(filtered);
+      setAllAttendance(filtered);
+      // No automatic date filtering - selectedDate remains empty
     } catch (err) {
       console.error(err);
       navigate('/');
@@ -108,7 +109,7 @@ export const useAttendance = () => {
     const token = localStorage.getItem('token');
     if (!token) return { success: false, error: 'Please login to continue.' };
 
-    const recordToUpdate = attendance.find(r => String(r.id) === recordId);
+    const recordToUpdate = allAttendance.find(r => String(r.id) === recordId);
     if (recordToUpdate && !canEditRecord(recordToUpdate)) {
       return { success: false, error: 'You do not have permission to edit this record.' };
     }
@@ -137,13 +138,13 @@ export const useAttendance = () => {
     } finally {
       setUpdatingId(null);
     }
-  }, [fetchData, attendance, canEditRecord]);
+  }, [fetchData, allAttendance, canEditRecord]);
 
   const updateAttendanceType = useCallback(async (recordId: string, newType: string): Promise<{ success: boolean; error?: string }> => {
     const token = localStorage.getItem('token');
     if (!token) return { success: false, error: 'Please login to continue.' };
 
-    const recordToUpdate = attendance.find(r => String(r.id) === recordId);
+    const recordToUpdate = allAttendance.find(r => String(r.id) === recordId);
     if (recordToUpdate && !canEditRecord(recordToUpdate)) {
       return { success: false, error: 'You do not have permission to edit this record.' };
     }
@@ -172,7 +173,7 @@ export const useAttendance = () => {
     } finally {
       setUpdatingTypeId(null);
     }
-  }, [fetchData, attendance, canEditRecord]);
+  }, [fetchData, allAttendance, canEditRecord]);
 
   useEffect(() => {
     fetchAttendanceOptions();
@@ -184,14 +185,15 @@ export const useAttendance = () => {
     fetchData();
   }, [fetchData]);
 
+  // Apply date filter to the full dataset - no default filtering
   const filteredByDate = selectedDate
-    ? attendance.filter(record => record.date === selectedDate)
-    : attendance;
+    ? allAttendance.filter(record => record.date === selectedDate)
+    : allAttendance;
 
   return {
     staff,
     attendance: filteredByDate,
-    allAttendance: attendance,
+    allAttendance,
     loading,
     selectedDate,
     setSelectedDate,

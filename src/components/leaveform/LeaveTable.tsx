@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Pencil, Inbox, Trash2 } from 'lucide-react';
 import { LeaveTableRow } from '../../types/leave.types';
 import { Pagination } from '../common/Pagination';
@@ -15,6 +15,7 @@ export const LeaveTable: React.FC<LeaveTableProps> = ({ data, onEdit, onDelete }
     // 1. Pagination State
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const tableContainerRef = useRef<HTMLDivElement>(null);
 
     // 2. Expansion State (Tracks the ID of the expanded row)
     const [expandedRowId, setExpandedRowId] = useState<string | number | null>(null);
@@ -25,8 +26,8 @@ export const LeaveTable: React.FC<LeaveTableProps> = ({ data, onEdit, onDelete }
     const startIndex = (currentPage - 1) * itemsPerPage;
 
     const currentTableData = useMemo(() => {
-        return data.slice(startIndex, startIndex + itemsPerPage);
-    }, [data, startIndex, itemsPerPage]);
+        return dataWithSerialNumbers.slice(startIndex, startIndex + itemsPerPage);
+    }, [dataWithSerialNumbers, startIndex, itemsPerPage]);
 
     const getStatusStyles = (status: string) => {
         const s = status.toLowerCase();
