@@ -29,7 +29,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
         form_status: 'pending',
     });
     const [error, setError] = useState('')
-    const [editId, setEditId] = useState<number | null>(null);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -160,7 +159,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
         submitLeaveRequest,
         setFormData,
         setError,
-        setEditId,
         getApproverName
     };
 };

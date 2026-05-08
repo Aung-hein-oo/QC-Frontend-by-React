@@ -49,6 +49,7 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                         <option value="">Select leave type</option>
                         {LEAVE_TYPES
                             .filter(type => {
+                                if (type.value === formData.leave_type) return true;
                                 const staffId = formData.staff_id || "";
                                 const starts25 = staffId.startsWith("25");
                                 const starts26 = staffId.startsWith("26");

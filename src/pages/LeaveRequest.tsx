@@ -44,7 +44,7 @@ const LeaveRequest: React.FC = () => {
         reason: item.reason,
         status: item.form_status,
         total: item.total_leave_day,
-        approved_by: item.approved_by|| [],
+        approved_by: item.approved_by || [],
     }));
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -58,20 +58,37 @@ const LeaveRequest: React.FC = () => {
     };
 
     const handleEdit = (row: LeaveTableRow) => {
-    setFormData((prev: any) => ({
-        ...prev,
-        staff_id: row.staffNo,
-        req_leave_date_from: row.fromDate,
-        req_leave_date_to: row.toDate,
-        leave_type: row.leaveType,
-        reason: row.reason,
-        total_leave_day: row.total,
-        leave_form_id: parseInt(row.id),
-        approved_by: row.approved_by,
-    }));
+        // 1. Create a helper to map the display text to your specific constant values
+    const mapLabelToValue = (label: string) => {
+        const cleanLabel = label.toLowerCase().trim();
+        
+        // Manual mapping for the "special" camelCase values in your LEAVE_TYPES
+        if (cleanLabel.includes('health')) return 'healthCare';
+        if (cleanLabel.includes('with pay') && !cleanLabel.includes('without')) return 'withPay';
+        if (cleanLabel.includes('without')) return 'without';
+        if (cleanLabel.includes('casual')) return 'casual';
+        if (cleanLabel.includes('earn')) return 'earn';
+        if (cleanLabel.includes('married')) return 'married';
+        if (cleanLabel.includes('maternity')) return 'maternity';
+        if (cleanLabel.includes('paternity')) return 'paternity';
+        if (cleanLabel.includes('medical')) return 'medical';
+        
+        return cleanLabel; // Fallback
+    };
+        setFormData((prev: any) => ({
+            ...prev,
+            staff_id: row.staffNo,
+            req_leave_date_from: row.fromDate,
+            req_leave_date_to: row.toDate,
+            leave_type: mapLabelToValue(row.leaveType),
+            reason: row.reason,
+            total_leave_day: row.total,
+            leave_form_id: parseInt(row.id),
+            approved_by: row.approved_by,
+        }));
 
-    setShowUpdate(true);
-};
+        setShowUpdate(true);
+    };
 
     const handleDelete = (row: LeaveTableRow) => {
         setSelectedRow(row);   // ✅ no error
@@ -87,31 +104,31 @@ const LeaveRequest: React.FC = () => {
     }
 
     const confirmDelete = async () => {
-    if (!selectedRow) return;
+        if (!selectedRow) return;
 
-    try {
-        const res = await fetch(`${config.apiUrl}/leave-form/${selectedRow.id}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
+        try {
+            const res = await fetch(`${config.apiUrl}/leave-form/${selectedRow.id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (res.ok) {
+                alert("Delete request successfully!");
+
+                setShowDelete(false);
+                setSelectedRow(null);
+                refreshLeave(); // 🔥 refresh table
+
+            } else {
+                const err = await res.json();
+                console.error("Delete failed:", err);
             }
-        });
-
-        if (res.ok) {
-            alert("Delete request successfully!"); 
-
-            setShowDelete(false);
-            setSelectedRow(null);
-            refreshLeave(); // 🔥 refresh table
-            
-        } else {
-            const err = await res.json();
-            console.error("Delete failed:", err);
+        } catch (err) {
+            console.error("Network error:", err);
         }
-    } catch (err) {
-        console.error("Network error:", err);
-    }
-};
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
@@ -119,30 +136,38 @@ const LeaveRequest: React.FC = () => {
                 <Header />
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 py-6">
-                <div className="flex justify-end mb-6">
-                    <div className="flex gap-3">
+            <main className="flex-1 min-h-0 overflow-hidden px-6 py-8">
+                {/* Page Header Container */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">Leave Request</h1>
+                        <p className="text-slate-500 mt-1 italic">Manage and request staff leave applications</p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {/* Optional: Add a search or filter icon button here later */}
                         <button
                             onClick={() => {
-                                // Reset form for new entry
                                 setFormData((prev: any) => ({ ...prev, leave_form_id: 0 }));
                                 setShowModal(true);
                             }}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium shadow-md"
+                            className="group flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all active:scale-95 text-sm font-bold shadow-lg shadow-blue-200"
                         >
-                            ADD REQUEST
+                            {/* Plus Icon */}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 transition-transform group-hover:rotate-90"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                            </svg>
+                            ADD 
                         </button>
-                        {/* <button
-                            onClick={() => setShowDelete(true)}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
-                        >
-                            DELETE  REQUEST
-                        </button> */}
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <LeaveTable data={tableData} onEdit={handleEdit} onDelete={handleDelete} staffList={staffList || []}/>
+                    <LeaveTable data={tableData} onEdit={handleEdit} onDelete={handleDelete} staffList={staffList || []} />
                 </div>
 
                 <LeaveModal
@@ -181,7 +206,7 @@ const LeaveRequest: React.FC = () => {
                 />
 
                 <div className="mt-6 text-xs text-center text-slate-400 border-t pt-6">
-                    © 2026 Attendance Management System by MODOS. All rights reserved.
+                    © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
                 </div>
             </main>
         </div>
