@@ -5,7 +5,6 @@ import { useAttendance } from '../hooks/useAttendance';
 import { useOrganization } from '../hooks/useOrganization';
 import { AttendanceStats } from '../components/attendance/AttendanceStats';
 import { AttendanceTable } from '../components/attendance/AttendanceTable';
-import { DateFilter } from '../components/attendance/DateFilter';
 import { getScope } from '../utils/positionRules';
 import { useNotification } from '../components/common/Notification';
 import Dropdown from "../components/profile/Dropdown";
@@ -156,18 +155,13 @@ const AttendanceHomepage = () => {
 
       <main className="flex-1 min-h-0 overflow-hidden px-4 py-4">
         <div className="h-full flex flex-col gap-4">
-          <div className="flex-shrink-0 flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <DateFilter selectedDate={selectedDate} onDateChange={setSelectedDate} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <AttendanceStats 
-                present={stats.present}
-                leave={stats.leave}
-                halfLeave={stats.halfLeave}
-                absence={stats.absence}
-              />
-            </div>
+          <div className="flex-shrink-0">
+            <AttendanceStats 
+              present={stats.present}
+              leave={stats.leave}
+              halfLeave={stats.halfLeave}
+              absence={stats.absence}
+            />
           </div>
 
           <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-hidden">

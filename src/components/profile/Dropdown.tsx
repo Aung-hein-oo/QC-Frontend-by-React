@@ -26,6 +26,13 @@ const Dropdown: React.FC<DropdownProps> = ({
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    // Define positions that can approve leaves
+    const canApproveLeaves = (): boolean => {
+        if (!staff) return false;
+        const approvePositions = ["Admin", "General Manager", "Deputy General Manager"];
+        return approvePositions.includes(staff.staff_position);
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -185,8 +192,8 @@ const Dropdown: React.FC<DropdownProps> = ({
                     </button>
                     )}
 
-                    {/* Leave Approve - only for staff IDs starting with 25 */}
-                    {staff.staff_id?.startsWith("25") && (
+                    {/* Leave Approve - only for Admin, General Manager, and Deputy General Manager */}
+                    {canApproveLeaves() && (
                         <button
                             onClick={() => {
                                 navigate("/leave_approve");
