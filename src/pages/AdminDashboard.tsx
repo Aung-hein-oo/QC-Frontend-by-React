@@ -16,6 +16,7 @@ const AdminDashboard: React.FC = () => {
     divisions,
     departments,
     teams,
+    importStaffExcel,
     loading,
     showModal,
     showViewModal,
@@ -76,14 +77,26 @@ const AdminDashboard: React.FC = () => {
 
   const handleSubmit = async (formData: any) => {
     if (editingStaff) {
-      await updateStaff(formData, editingStaff.id);
+      await updateStaff(formData, editingStaff.staff_id);
     } else {
       await addStaff(formData);
     }
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const success = await importStaffExcel(file);
+      if (success && fileInputRef.current) {
+        fileInputRef.current.value = ''; // Reset input
+      }
+    }
+  };
+
   const handleExcelImport = () => {
-    showNotification('Excel import functionality will be implemented soon', 'info');
+    fileInputRef.current?.click();
   };
 
   const handleHolidayImport = () => {
@@ -117,6 +130,13 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden main-container-fix">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        accept=".xlsx, .xls" 
+        className="hidden" 
+      />
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}
@@ -139,7 +159,7 @@ const AdminDashboard: React.FC = () => {
 
           {/* Footer */}
           <div className="flex-shrink-0 mt-4 text-xs text-center text-gray-500 border-t pt-4">
-            © 2026 Attendance Management System by MODOS. All rights reserved.
+            © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
           </div>
         </div>
       </main>

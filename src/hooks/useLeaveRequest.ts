@@ -135,20 +135,7 @@ export const useLeaveRequest = (initialStaffId: string) => {
             setError("Network error");
             return false;
         }
-    };
-    const [staffList, setStaffList] = useState<StaffMember[]>([]);
-    
-        useEffect(() => {
-            fetch(`${config.apiUrl}/staff/`)
-                .then(res => res.json())
-                .then(data => setStaffList(data));
-        }, []);
-    
-        const getApproverName = (id: string | number) => {
-            const user = staffList.find((s: any) => s.id == id);
-            return user ? user.staff_name : id;
-        };
-    
+    };    
 
     return {
         formData,
@@ -159,6 +146,5 @@ export const useLeaveRequest = (initialStaffId: string) => {
         submitLeaveRequest,
         setFormData,
         setError,
-        getApproverName
     };
 };
