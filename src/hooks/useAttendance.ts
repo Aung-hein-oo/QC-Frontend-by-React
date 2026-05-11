@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { StaffMember, AttendanceRecord } from '../types';
 import { getScope, canEditAttendance } from '../utils/positionRules';
 import { config } from '../utils/config';
 
 export const useAttendance = () => {
-  const navigate = useNavigate();
+  
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
   const [allStaffList, setAllStaffList] = useState<StaffMember[]>([]);
   const [staff, setStaff] = useState<StaffMember | null>(null);
@@ -16,33 +16,35 @@ export const useAttendance = () => {
   const [availableTypes, setAvailableTypes] = useState<string[]>([]);
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
   
-  const fetchAttendanceOptions = useCallback(async () => {
-    const token = localStorage.getItem('token');
+    const getAuth = () => {
+      const token = localStorage.getItem('token');
+      const staffId = localStorage.getItem('staff_id');
+      return { token, staffId };
+    };
+
+   const fetchAttendanceOptions = useCallback(async () => {
+    const { token } = getAuth();
     if (!token) return;
-    
+
     try {
-      const response = await fetch(`${config.apiUrl}/attendance/meta/options`, {
+      const res = await fetch(`${config.apiUrl}/attendance/meta/options`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
+
+      if (res.ok) {
+        const data = await res.json();
         setAvailableStatuses(data.statuses || []);
         setAvailableTypes(data.types || []);
       }
     } catch (err) {
-      console.error('Failed to fetch attendance options:', err);
+      console.error(err);
     }
   }, []);
   
   const fetchData = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    const staffId = localStorage.getItem('staff_id');
+    const { token, staffId } = getAuth();
     
-    if (!token || !staffId) {
-      navigate('/');
-      return;
-    }
+    if (!token || !staffId) return;
     
     try {
       const staffRes = await fetch(`${config.apiUrl}/staff/`, {
@@ -93,87 +95,85 @@ export const useAttendance = () => {
       setAllAttendance(filtered);
       // No automatic date filtering - selectedDate remains empty
     } catch (err) {
-      console.error(err);
-      navigate('/');
+        console.error('Fetch attendance failed:', err);
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, []);
 
   const canEditRecord = useCallback((record: AttendanceRecord): boolean => {
     if (!staff) return false;
     return canEditAttendance(staff, record, allStaffList);
   }, [staff, allStaffList]);
 
-  const updateAttendanceStatus = useCallback(async (recordId: string, newStatus: string): Promise<{ success: boolean; error?: string }> => {
-    const token = localStorage.getItem('token');
-    if (!token) return { success: false, error: 'Please login to continue.' };
-
-    const recordToUpdate = allAttendance.find(r => String(r.id) === recordId);
-    if (recordToUpdate && !canEditRecord(recordToUpdate)) {
-      return { success: false, error: 'You do not have permission to edit this record.' };
-    }
+   const updateAttendanceStatus = useCallback(async (recordId: string, newStatus: string) => {
+    const { token } = getAuth();
+    if (!token) return { success: false };
 
     setUpdatingId(recordId);
-    
+
     try {
-      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+      const res = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ attendance_status: newStatus }),
+        body: JSON.stringify({ attendance_status: newStatus })
       });
 
-      if (response.ok) {
-        await fetchData();
-        return { success: true };
-      } else {
-        const error = await response.json();
-        return { success: false, error: error.message || 'Failed to update status' };
+      if (!res.ok) {
+        return { success: false };
       }
-    } catch (error) {
-      return { success: false, error: 'Failed to update status. Please try again.' };
+
+      //  ONLY local update
+      setAllAttendance(prev =>
+        prev.map(r =>
+          String(r.id) === recordId
+            ? { ...r, attendance_status: newStatus }
+            : r
+        )
+      );
+
+      return { success: true };
     } finally {
       setUpdatingId(null);
     }
-  }, [fetchData, allAttendance, canEditRecord]);
+  }, []);
 
-  const updateAttendanceType = useCallback(async (recordId: string, newType: string): Promise<{ success: boolean; error?: string }> => {
-    const token = localStorage.getItem('token');
-    if (!token) return { success: false, error: 'Please login to continue.' };
-
-    const recordToUpdate = allAttendance.find(r => String(r.id) === recordId);
-    if (recordToUpdate && !canEditRecord(recordToUpdate)) {
-      return { success: false, error: 'You do not have permission to edit this record.' };
-    }
+  const updateAttendanceType = useCallback(async (recordId: string, newType: string) => {
+    const { token } = getAuth();
+    if (!token) return { success: false };
 
     setUpdatingTypeId(recordId);
-    
+
     try {
-      const response = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+      const res = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ attendance_type: newType }),
+        body: JSON.stringify({ attendance_type: newType })
       });
 
-      if (response.ok) {
-        await fetchData();
-        return { success: true };
-      } else {
-        const error = await response.json();
-        return { success: false, error: error.message || 'Failed to update type' };
+      if (!res.ok) {
+        return { success: false };
       }
-    } catch (error) {
-      return { success: false, error: 'Failed to update type. Please try again.' };
+
+      setAllAttendance(prev =>
+        prev.map(r =>
+          String(r.id) === recordId
+            ? { ...r, attendance_type: newType }
+            : r
+        )
+      );
+
+      return { success: true };
     } finally {
       setUpdatingTypeId(null);
     }
-  }, [fetchData, allAttendance, canEditRecord]);
+  }, []);
 
   useEffect(() => {
     fetchAttendanceOptions();

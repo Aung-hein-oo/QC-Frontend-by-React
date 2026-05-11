@@ -22,6 +22,7 @@ const AdminDashboard: React.FC = () => {
     departments,
     teams,
     importStaffExcel,
+    importHolidayExcel,
     loading,
     showModal,
     showViewModal,
@@ -29,6 +30,8 @@ const AdminDashboard: React.FC = () => {
     viewingStaff,
     isSubmitting,
     generatedStaffId,
+    importingHoliday,
+    holidayImportProgress,
     updateGeneratedStaffId,
     fetchDepartmentsByDivision,
     fetchTeamsByDepartment,
@@ -119,6 +122,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const holidayFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -148,12 +152,40 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleHolidayFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const success = await importHolidayExcel(file);
+      if (success) {
+        showSuccess(
+          'Holiday Import Successful',
+          'Holiday data has been successfully imported from Excel.',
+          'Imported',
+          'emerald'
+        );
+        if (holidayFileInputRef.current) {
+          holidayFileInputRef.current.value = '';
+        }
+      } else {
+        showConfirm(
+          'Import Failed',
+          'There was an error importing the holiday data. Please check the file format and try again.',
+          () => Promise.resolve(),
+          'OK',
+          '',
+          'error',
+          false
+        );
+      }
+    }
+  };
+
   const handleExcelImport = () => {
     fileInputRef.current?.click();
   };
 
   const handleHolidayImport = () => {
-    showNotification('Holiday import functionality will be implemented soon', 'info');
+    holidayFileInputRef.current?.click();
   };
 
   const handleDivisionChange = async (divisionId: number) => {
@@ -181,6 +213,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden main-container-fix">
+      {/* Staff file input */}
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -189,10 +222,23 @@ const AdminDashboard: React.FC = () => {
         className="hidden" 
       />
       
+      {/* Holiday file input */}
+      <input 
+        type="file" 
+        ref={holidayFileInputRef} 
+        onChange={handleHolidayFileChange} 
+        accept=".xlsx, .xls" 
+        className="hidden" 
+      />
+      
       <AdminHeader 
         onAddStaff={openAddModal}
         onImportExcel={handleExcelImport}
         onAddHoliday={handleHolidayImport}
+        importing={isSubmitting}
+        importProgress={0}
+        importingHoliday={importingHoliday}
+        holidayImportProgress={holidayImportProgress}
       />
 
       <main className="flex-1 min-h-0 overflow-hidden">

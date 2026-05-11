@@ -187,7 +187,7 @@ export const AttendanceTable = ({
       
       if (result.success) {
         showNotification(`✓ Status updated to "${newStatus}"`, 'success');
-        await onStatusUpdate?.();
+        // await onStatusUpdate?.();
         setOpenStatusDropdownId(null);
       } else {
         showNotification(result.error || 'Failed to update status', 'error');
@@ -218,7 +218,7 @@ export const AttendanceTable = ({
       
       if (result.success) {
         showNotification(`✓ Type updated to "${newType}"`, 'success');
-        await onStatusUpdate?.();
+        // await onStatusUpdate?.();
         setOpenTypeDropdownId(null);
       } else {
         showNotification(result.error || 'Failed to update type', 'error');
