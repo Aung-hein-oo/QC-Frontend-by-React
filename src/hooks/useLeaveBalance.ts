@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { LeaveBalance, MaleLeaveBalance, FemaleLeaveBalance } from '../types';
+import { LeaveBalance } from '../types';
+import { config } from '../utils/config';
 
 interface UseLeaveBalanceReturn {
   leaveBalance: LeaveBalance | null;
@@ -24,7 +25,7 @@ export const useLeaveBalance = (staffId: string | undefined): UseLeaveBalanceRet
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://192.168.250.1:8065/leave-balance/${staffId}`, {
+      const response = await fetch(`${config.apiUrl}/leave-balance/${staffId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
