@@ -92,7 +92,7 @@ export const useStaffManagement = () => {
   }, [state.staffList]);
 
   // CRUD Operations
-  const handleSubmit = async (formData: StaffFormData, isEdit: boolean, id?: number) => {
+  const handleSubmit = async (formData: StaffFormData, isEdit: boolean, id?: string) => {
     setState(prev => ({ ...prev, isSubmitting: true }));
     
     console.log('=== handleSubmit Debug ===');
@@ -139,9 +139,9 @@ export const useStaffManagement = () => {
   };
 
   const addStaff = (formData: StaffFormData) => handleSubmit(formData, false);
-  const updateStaff = (formData: StaffFormData, id: number) => handleSubmit(formData, true, id);
+  const updateStaff = (formData: StaffFormData, id: string) => handleSubmit(formData, true, id);
 
-  const deleteStaff = async (id: number) => {
+  const deleteStaff = async (id: string) => {
     if (!window.confirm('Delete this staff member?')) return;
     try {
       await apiRequest(`${config.apiUrl}/staff/${id}`, { method: 'DELETE' });
@@ -173,6 +173,43 @@ export const useStaffManagement = () => {
     })),
   };
 
+  const importStaffExcel = async (file: File) => {
+    setState(prev => ({ ...prev, isSubmitting: true }));
+    
+    const formData = new FormData();
+    formData.append('file', file); // The key 'file' must match what your backend expects
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${config.apiUrl}/staff/upload-excel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Note: Do NOT set Content-Type header when sending FormData, 
+          // the browser will set it automatically with the boundary string
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw error;
+      }
+
+      const result = await response.json();
+      alert(result.message || 'Excel imported successfully');
+      await fetchData.staff(); // Refresh the list
+      return true;
+    } catch (error: any) {
+      console.error('Error importing Excel:', error);
+      const msg = error.detail || error.message || 'Failed to upload file';
+      alert(`Import failed: ${msg}`);
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+
   // Initial load
   useEffect(() => {
     const init = async () => {
@@ -201,6 +238,7 @@ export const useStaffManagement = () => {
     generatedStaffId: state.generatedStaffId,
     showModal: state.showModal,
     showViewModal: state.showViewModal,
+    importStaffExcel,
     
     // Actions
     updateGeneratedStaffId: (gender: string) => setState(prev => ({ 

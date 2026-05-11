@@ -186,7 +186,7 @@ const Login: React.FC = () => {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          © 2026 Attendance Management System by MODOS. All rights reserved.
+          © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
         </p>
       </div>
     </div>
