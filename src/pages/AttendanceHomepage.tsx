@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Calendar, User, Building2, Users, Flag, Loader } from 'lucide-react';
+import { Calendar, User, Building2, Users, Flag, Loader, ClipboardList } from 'lucide-react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useOrganization } from '../hooks/useOrganization';
 import { AttendanceStats } from '../components/attendance/AttendanceStats';
@@ -164,16 +164,36 @@ const AttendanceHomepage = () => {
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden px-4 py-4">
-        <div className="h-full flex flex-col gap-4">
+        <div className="h-full flex flex-col gap-3">
+          {/* Page Header with Title/Description and Stats Cards side by side */}
           <div className="flex-shrink-0">
-            <AttendanceStats 
-              present={stats.present}
-              leave={stats.leave}
-              halfLeave={stats.halfLeave}
-              absence={stats.absence}
-            />
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              {/* Left side - Title and Description */}
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ClipboardList className="text-blue-600" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Attendance Records</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Track and manage daily staff attendance records
+                  </p>
+                </div>
+              </div>
+              
+              {/* Right side - Stats Cards */}
+              <div className="flex-shrink-0">
+                <AttendanceStats 
+                  present={stats.present}
+                  leave={stats.leave}
+                  halfLeave={stats.halfLeave}
+                  absence={stats.absence}
+                />
+              </div>
+            </div>
           </div>
 
+          {/* Attendance Table */}
           <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-hidden">
             <AttendanceTable 
               attendance={attendance}
@@ -190,7 +210,7 @@ const AttendanceHomepage = () => {
             />
           </div>
           
-          <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-4">
+          <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-3">
             © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
           </div>
         </div>
