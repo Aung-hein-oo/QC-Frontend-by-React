@@ -8,12 +8,9 @@ import { DeleteModal } from '../components/leaveform/DeleteModal';
 import Header from '../components/profile/Header';
 import { LeaveTableRow } from '../types/leave.types';
 import { config } from '../utils/config';
-import { useStaffManagement } from '../hooks/useStaffManagement';
 
 const LeaveRequest: React.FC = () => {
     const { staff } = useAttendance();
-
-    const { staffList } = useStaffManagement();
     // Fetch and filter leave records
     const { leaveRecords, loading, refreshLeave } = useLeaveData(staff?.staff_id);
 
@@ -167,7 +164,7 @@ const LeaveRequest: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <LeaveTable data={tableData} onEdit={handleEdit} onDelete={handleDelete} staffList={staffList || []} />
+                    <LeaveTable data={tableData} onEdit={handleEdit} onDelete={handleDelete} />
                 </div>
 
                 <LeaveModal

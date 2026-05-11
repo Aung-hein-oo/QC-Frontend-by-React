@@ -3,7 +3,6 @@ import { LeaveRequestType } from '../types/leave.types';
 import { config } from '../utils/config';
 import { LEAVE_TYPES, ATTACHMENT_REQUIRED_TYPES } from '../utils/leave.constants';
 import { calculateTotalLeaveDays, getTodayDate } from '../utils/leave.utils';
-import { StaffMember } from '../types/index';
 
 export const useLeaveRequest = (initialStaffId: string) => {
     useEffect(() => {
@@ -136,19 +135,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
             return false;
         }
     };
-    const [staffList, setStaffList] = useState<StaffMember[]>([]);
-    
-        useEffect(() => {
-            fetch(`${config.apiUrl}/staff/`)
-                .then(res => res.json())
-                .then(data => setStaffList(data));
-        }, []);
-    
-        const getApproverName = (id: string | number) => {
-            const user = staffList.find((s: any) => s.id == id);
-            return user ? user.staff_name : id;
-        };
-    
 
     return {
         formData,
@@ -159,6 +145,5 @@ export const useLeaveRequest = (initialStaffId: string) => {
         submitLeaveRequest,
         setFormData,
         setError,
-        getApproverName
     };
 };

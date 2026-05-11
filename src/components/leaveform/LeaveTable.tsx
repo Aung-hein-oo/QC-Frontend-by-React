@@ -2,13 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Pencil, Inbox, Trash2 } from 'lucide-react';
 import { LeaveTableRow } from '../../types/leave.types';
 import { Pagination } from '../common/Pagination';
-import { StaffMember } from '../../types';
 
 interface LeaveTableProps {
     data: LeaveTableRow[];
     onEdit: (row: LeaveTableRow) => void;
     onDelete: (row: LeaveTableRow) => void;
-    staffList: StaffMember[];
 }
 
 export const LeaveTable: React.FC<LeaveTableProps> = ({ data, onEdit, onDelete }) => {
@@ -90,7 +88,11 @@ export const LeaveTable: React.FC<LeaveTableProps> = ({ data, onEdit, onDelete }
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 font-medium">
-                                            {row.approved_by?.length > 0 ? row.approved_by.join(', ') :<span className="text-slate-200">—</span>}
+                                            {row.approved_by && row.approved_by.length > 0 ? (
+                                                row.approved_by
+                                            ) : (
+                                                <span className="text-slate-200">—</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             <div className="flex items-center gap-2">
