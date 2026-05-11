@@ -86,6 +86,9 @@ const Dropdown: React.FC<DropdownProps> = ({
 
     // Check if current path is dashboard or home
     const isOnDashboard = location.pathname === '/dashboard' || location.pathname === '/';
+    
+    // Check if current path is exactly dashboard (for export visibility)
+    const isExactlyOnDashboard = location.pathname === '/dashboard';
 
     if (!staff) return null;
 
@@ -126,8 +129,8 @@ const Dropdown: React.FC<DropdownProps> = ({
                         </>
                     )}
 
-                    {/* Export button - only shown for users with export permission */}
-                    {canExport && (
+                    {/* Export button - ONLY shown on dashboard page */}
+                    {isExactlyOnDashboard && canExport && (
                         <>
                             <button
                                 onClick={handleExport}
@@ -142,7 +145,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                                 ) : (
                                     <>
                                         <Download size={16} className="text-green-600" />
-                                        <span>Export Excel</span>
+                                        <span>Export BCP Excel</span>
                                         <span className="ml-auto text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">Report</span>
                                     </>
                                 )}

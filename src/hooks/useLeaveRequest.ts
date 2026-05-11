@@ -134,7 +134,7 @@ export const useLeaveRequest = (initialStaffId: string) => {
             setError("Network error");
             return false;
         }
-    };
+    };    
 
     return {
         formData,

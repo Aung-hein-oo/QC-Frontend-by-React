@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, User, Calendar, Download } from 'lucide-react';
+import { CheckCircle, XCircle, User, Calendar, Download, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import Header from '../components/profile/Header';
 import { useLeaveApprove } from '../hooks/useLeaveApprove';
@@ -6,10 +6,38 @@ import { config } from '../utils/config';
 import { Pagination } from '../components/common/Pagination';
 import { useAttendance } from '../hooks//useAttendance';
 
+// Add this new component
+const ReasonCell = ({ reason }: { reason: string }) => {
+  const [expanded, setExpanded] = useState(false);
+  const maxLength = 100;
+  const needsTruncation = reason && reason.length > maxLength;
+  
+  if (!reason) return <span className="text-gray-400">-</span>;
+  
+  return (
+    <div className="flex items-start gap-2">
+      <div className="flex-1">
+        <span className="text-sm text-gray-600 break-words">
+          {expanded ? reason : `${reason.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
+        </span>
+      </div>
+      {needsTruncation && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1"
+        >
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          <span>{expanded ? 'See less' : 'See more'}</span>
+        </button>
+      )}
+    </div>
+  );
+};
+
 const LeaveApprove: React.FC = () => {
     const { leaveList, loading, refreshLeave } = useLeaveApprove();
     const [showConfirm, setShowConfirm] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false); // ✅ New State for Success
+    const [showSuccess, setShowSuccess] = useState(false);
     const [actionType, setActionType] = useState("");
     const [selectedRow, setSelectedRow] = useState<any>(null);
     const { allStaffList } = useAttendance();
@@ -19,7 +47,6 @@ const LeaveApprove: React.FC = () => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedData = leaveList.slice(startIndex, startIndex + itemsPerPage);
-    const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
 
     const handleAction = async () => {
         if (!selectedRow || !selectedRow.leave_form_id) return;
@@ -40,9 +67,8 @@ const LeaveApprove: React.FC = () => {
             if (res.ok) {
                 await refreshLeave();
                 setShowConfirm(false);
-                setShowSuccess(true); // ✅ Show Success Modal
+                setShowSuccess(true);
 
-                // Auto-close success modal after 2 seconds
                 setTimeout(() => setShowSuccess(false), 2500);
             } else {
                 const errorData = await res.json().catch(() => ({}));
@@ -54,43 +80,48 @@ const LeaveApprove: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col">
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="h-screen bg-slate-50 font-sans text-slate-900 flex flex-col overflow-hidden">
+            <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
                 <Header />
             </header>
 
-            <main className="flex-1 min-h-0 overflow-hidden px-6 py-8">
-                {/* ... (Keep your existing TOP FRAME and TABLE as is) ... */}
-
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+            <main className="flex-1 min-h-0 flex flex-col px-6 py-8 overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 flex-shrink-0">
                     <div>
                         <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">Leave Manage</h1>
                         <p className="text-slate-500 mt-1 italic">Review and manage employee leave Requests</p>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-black shadow-xl shadow-slate-200/50 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Employee</th>
-                                    <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">LeaveType</th>
-                                    <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Reason</th>
-                                    <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Duration</th>
-                                    <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">TotalDuration</th>
-                                    <th className="px-6 py-5 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">Decision</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {loading ? (
-                                    <tr><td colSpan={5} className="p-20 text-center text-slate-400 animate-pulse">Loading...</td></tr>
-                                ) : totalItems === 0 ? (
-                                    <tr><td colSpan={5} className="p-20 text-center text-slate-300 italic font-medium">No pending requests to display.</td></tr>
-                                ) : (
-                                    paginatedData.map((row, idx) => {
-                                        const isThisRowExpanded = expandedRowId === row.leave_form_id;
-                                        return (
+                <div className="bg-white rounded-2xl border border-black shadow-xl shadow-slate-200/50 flex flex-col flex-1 min-h-0 overflow-hidden">
+                    {/* Scrollable table container */}
+                    <div className="flex-1 min-h-0 overflow-auto">
+                        <div className="min-w-full inline-block align-middle">
+                            <table className="min-w-full border-collapse">
+                                <thead className="sticky top-0 z-10 bg-slate-50">
+                                    <tr className="border-b border-slate-200">
+                                        <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Employee</th>
+                                        <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">LeaveType</th>
+                                        <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Reason</th>
+                                        <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">Duration</th>
+                                        <th className="px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">TotalDuration</th>
+                                        <th className="px-6 py-5 text-right text-xs font-bold text-slate-400 uppercase tracking-widest sticky right-0 bg-slate-50">Decision</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {loading ? (
+                                        <tr><td colSpan={6} className="p-20 text-center text-slate-400 animate-pulse">Loading...</td></tr>
+                                    ) : totalItems === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-4 py-10 text-center">
+                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                    <Inbox size={30} className="mb-2 opacity-20" />
+                                                    <p className="text-lg font-medium">No pending requests to display.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        paginatedData.map((row, idx) => (
                                             <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-3">
@@ -98,7 +129,6 @@ const LeaveApprove: React.FC = () => {
                                                             <User size={18} />
                                                         </div>
                                                         <div>
-                                                            {/* Find the name from allStaffList using the ID */}
                                                             <div className="font-bold text-slate-700">
                                                                 {allStaffList?.find(s => s.staff_id === row.staff_id)?.staff_name || row.staff_name || "Unknown"}
                                                             </div>
@@ -113,23 +143,9 @@ const LeaveApprove: React.FC = () => {
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex flex-col gap-1">
-                                                        <p className={`text-sm text-slate-400 italic transition-all duration-200 ${isThisRowExpanded ? "whitespace-normal" : "line-clamp-1 max-w-[200px]"
-                                                            }`}>
-                                                            {row.reason}
-                                                        </p>
-                                                        {row.reason?.length > 30 && (
-                                                            <button
-                                                                onClick={() => setExpandedRowId(isThisRowExpanded ? null : row.leave_form_id)}
-                                                                className="text-[10px] text-indigo-500 font-bold hover:text-indigo-700 mt-0.5 underline decoration-dotted text-left"
-                                                            >
-                                                                {isThisRowExpanded ? "Show Less" : "See More"}
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                <td className="px-6 py-5 min-w-[250px] max-w-[300px]">
+                                                    <ReasonCell reason={row.reason} />
                                                 </td>
-
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-2 text-sm font-medium text-slate-600 bg-slate-50 rounded-lg px-3 py-1.5 border border-slate-100 w-fit">
                                                         <Calendar size={14} className="text-slate-400" />
@@ -143,7 +159,7 @@ const LeaveApprove: React.FC = () => {
                                                         <span>{row.total_leave_day}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-5 text-right">
+                                                <td className="px-6 py-5 text-right sticky right-0 bg-white group-hover:bg-slate-50/50 transition-colors">
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             onClick={() => { setSelectedRow(row); setActionType("approved"); setShowConfirm(true); }}
@@ -160,41 +176,36 @@ const LeaveApprove: React.FC = () => {
                                                     </div>
                                                 </td>
                                             </tr>
-                                        )
-                                    })
-                                )}
-                            </tbody>
-                        </table>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        totalItems={totalItems}
-                        itemsPerPage={itemsPerPage}
-                        startIndex={startIndex}
-                        onPageChange={setCurrentPage}
-                        onItemsPerPageChange={(newSize) => { setItemsPerPage(newSize); setCurrentPage(1); }}
-                    />
+                    
+                    {/* Pagination - fixed at bottom */}
+                    <div className="border-t border-slate-200 bg-white flex-shrink-0">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={itemsPerPage}
+                            startIndex={startIndex}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={(newSize) => { setItemsPerPage(newSize); setCurrentPage(1); }}
+                        />
+                    </div>
                 </div>
 
-                <div className="mt-6 text-xs text-center text-slate-400 border-t pt-6">
+                <div className="mt-6 text-xs text-center text-slate-400 border-t pt-6 flex-shrink-0">
                     © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
                 </div>
             </main>
 
-            {/* 1. CONFIRMATION MODAL */}
+            {/* CONFIRMATION MODAL */}
             {showConfirm && (
                 <div className="fixed inset-0 flex items-start justify-center bg-black/20 pt-20 z-50">
-                    {/* Backdrop - Click to close */}
-                    <div
-                        className="flex justify-end gap-3"
-                        onClick={() => setShowConfirm(false)}
-                    />
-
-                    {/* Modal Card */}
                     <div className="bg-white rounded-xl shadow-xl w-80 p-5 animate-fade-in text-center">
-
-                        {/* Status Icon */}
                         <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
                             ? "bg-emerald-100 text-emerald-600"
                             : "bg-rose-100 text-rose-600"
@@ -205,8 +216,6 @@ const LeaveApprove: React.FC = () => {
                                 <XCircle size={32} />
                             )}
                         </div>
-
-                        {/* Content */}
                         <h2 className="text-lg font-black text-slate-800 text-center">Are you sure?</h2>
                         <p className="text-slate-500 text-sm mt-2 mb-6 italic leading-relaxed text-center">
                             You are about to <span className={`font-bold ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
@@ -215,7 +224,6 @@ const LeaveApprove: React.FC = () => {
                                 {actionType}
                             </span> the leave request.<br />
                         </p>
-                        {/* Actions */}
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setShowConfirm(false)}
@@ -225,7 +233,7 @@ const LeaveApprove: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => {
-                                    handleAction(); // Your logic function
+                                    handleAction();
                                     setShowConfirm(false);
                                 }}
                                 className={`py-3 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[11px] tracking-wider ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
@@ -239,7 +247,8 @@ const LeaveApprove: React.FC = () => {
                     </div>
                 </div>
             )}
-            {/* 2. ✅ SUCCESS MODAL */}
+            
+            {/* SUCCESS MODAL */}
             {showSuccess && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-emerald-900/20 backdrop-blur-[2px]" />

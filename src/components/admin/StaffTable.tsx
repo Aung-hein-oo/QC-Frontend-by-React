@@ -7,7 +7,7 @@ interface StaffTableProps {
   staffList: StaffMember[];
   onView: (staff: StaffMember) => void;
   onEdit: (staff: StaffMember) => void;
-  onDelete: (staffId: number) => void;
+  onDelete: (staffId: string) => void;
   itemsPerPage?: number;
   scrollable?: boolean;
   fixedHeader?: boolean;
@@ -181,7 +181,7 @@ const StaffTable: React.FC<StaffTableProps> = ({
                       <div className="flex items-center justify-center gap-2">
                         <ActionButton icon={Eye} onClick={() => onView(staff)} color="green" title="View Details" />
                         <ActionButton icon={Edit} onClick={() => onEdit(staff)} color="blue" title="Edit" />
-                        <ActionButton icon={Trash2} onClick={() => onDelete(staff.id)} color="red" title="Delete" />
+                        <ActionButton icon={Trash2} onClick={() => onDelete(staff.staff_id)} color="red" title="Delete" />
                       </div>
                     </td>
                   </tr>
