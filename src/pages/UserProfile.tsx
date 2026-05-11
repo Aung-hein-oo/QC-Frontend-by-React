@@ -65,7 +65,7 @@ const UserProfile: React.FC = () => {
 
                     {/* Footer - Fixed at bottom */}
                     <div className="flex-shrink-0 mt-4 text-xs text-center text-gray-500 border-t pt-4">
-                        © 2026 Attendance Management System by MODOS. All rights reserved.
+                        © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
                     </div>
                 </div>
             </main>

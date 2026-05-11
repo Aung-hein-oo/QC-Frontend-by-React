@@ -22,6 +22,7 @@ type AttendanceTableProps = {
   availableTypes?: string[];
   scrollable?: boolean;
   fixedHeader?: boolean;
+  defaultDateFilter?: string; // New prop for default date filter
 };
 
 type FilterState = {
@@ -94,10 +95,19 @@ export const AttendanceTable = ({
   updatingId: externalUpdatingId,
   updatingTypeId: externalUpdatingTypeId,
   availableTypes = [],
+  defaultDateFilter,
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
-  const [filters, setFilters] = useState<FilterState>({});
+  
+  // Initialize filters with default date filter if provided
+  const [filters, setFilters] = useState<FilterState>(() => {
+    if (defaultDateFilter) {
+      return { date: defaultDateFilter };
+    }
+    return {};
+  });
+  
   const [localUpdatingId, setLocalUpdatingId] = useState<string | null>(null);
   const [localUpdatingTypeId, setLocalUpdatingTypeId] = useState<string | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
@@ -130,7 +140,12 @@ export const AttendanceTable = ({
   };
 
   const clearFilters = () => {
-    setFilters({});
+    // For upper users, reset to default date filter (yesterday)
+    if (defaultDateFilter) {
+      setFilters({ date: defaultDateFilter });
+    } else {
+      setFilters({});
+    }
     setPage(1);
   };
 
@@ -234,6 +249,7 @@ export const AttendanceTable = ({
               onFilterChange={setFilter}
               onClearFilter={(col) => setFilter(col, '')}
               sticky={false}
+              defaultDateFilter={defaultDateFilter}
             />
             
             <tbody className="divide-y divide-gray-100">

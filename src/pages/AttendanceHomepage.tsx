@@ -68,6 +68,16 @@ const AttendanceHomepage = () => {
   const isAdmin = staff?.staff_position === 'Admin';
   const canExport = userScope !== 'self';
 
+  // Function to get yesterday's date for default filter
+  const getDefaultDateFilter = () => {
+    // Only apply default filter for upper users (not self scope)
+    if (userScope === 'self') return undefined;
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -176,11 +186,12 @@ const AttendanceHomepage = () => {
               updatingId={updatingId}
               updatingTypeId={updatingTypeId}
               availableTypes={availableTypes}
+              defaultDateFilter={getDefaultDateFilter()}
             />
           </div>
           
           <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-4">
-            © 2026 Attendance Management System by MODOS. All rights reserved.
+            © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
           </div>
         </div>
       </main>

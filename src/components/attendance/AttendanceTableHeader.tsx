@@ -16,6 +16,7 @@ interface AttendanceTableHeaderProps {
   onFilterChange: (column: string, value: string) => void;
   onClearFilter: (column: string) => void;
   sticky?: boolean;
+  defaultDateFilter?: string; // Add this prop
 }
 
 const statusOptions = ['Present', 'Half Leave', 'Leave', 'Absence'];
@@ -26,7 +27,11 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
   onFilterChange,
   onClearFilter,
   sticky = false,
+  defaultDateFilter,
 }) => {
+  // Use defaultDateFilter if date filter is empty
+  const dateValue = filters.date || defaultDateFilter || '';
+  
   return (
     <thead className={`bg-gray-50 border-b ${sticky ? 'sticky top-0 z-10' : ''}`}>
       <tr>
@@ -89,10 +94,18 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
             <div className="relative">
               <input
                 type="date"
-                value={filters.date || ''}
+                value={dateValue}
                 onChange={(e) => onFilterChange('date', e.target.value)}
                 className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
+              {/* {filters.date && (
+                <button
+                  onClick={() => onClearFilter('date')}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={12} />
+                </button>
+              )} */}
             </div>
           </div>
         </th>
