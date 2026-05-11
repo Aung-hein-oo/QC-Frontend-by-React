@@ -124,14 +124,12 @@ export const useStaffManagement = () => {
       
       console.log('API Response:', result);
       
-      alert(`Staff ${isEdit ? 'updated' : 'added'} successfully`);
       setState(prev => ({ ...prev, showModal: false, generatedStaffId: '' }));
       await fetchData.staff();
       return true;
     } catch (error: any) {
       console.error('Error in handleSubmit:', error);
       const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
-      alert(`Failed to ${isEdit ? 'update' : 'add'} staff:\n${msg}`);
       return false;
     } finally {
       setState(prev => ({ ...prev, isSubmitting: false }));
@@ -142,14 +140,11 @@ export const useStaffManagement = () => {
   const updateStaff = (formData: StaffFormData, id: string) => handleSubmit(formData, true, id);
 
   const deleteStaff = async (id: string) => {
-    if (!window.confirm('Delete this staff member?')) return;
     try {
       await apiRequest(`${config.apiUrl}/staff/${id}`, { method: 'DELETE' });
-      alert('Staff deleted successfully');
       await fetchData.staff();
     } catch (error: any) {
       const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
-      alert(`Failed to delete staff:\n${msg}`);
     }
   };
 

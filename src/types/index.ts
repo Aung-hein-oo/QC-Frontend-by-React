@@ -73,6 +73,7 @@ export interface BaseLeaveBalance {
   leave_without_pay: number;
   married_leave: number;
   medical_leave: number;
+  earn_leave: number;
   id: number;
 }
 

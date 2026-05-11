@@ -11,7 +11,7 @@ export interface LeaveBalanceDisplay {
 // Default leave entitlements (you can adjust these values)
 const DEFAULT_ENTITLEMENTS = {
   casual: 6,
-  earn: 0,
+  earn: 10,
   family_funeral_health: 3,
   medical: 30,
   married: 1,
@@ -60,7 +60,7 @@ export const formatLeaveBalanceData = (
     {
       leaveType: 'Earn Leave',
       entitle: DEFAULT_ENTITLEMENTS.earn,
-      balance: 0, // You might need to add this to your API response
+      balance: leaveBalance.earn_leave || 0,
     },
     {
       leaveType: 'Family Funeral or Health Care Leave',
@@ -82,7 +82,7 @@ export const formatLeaveBalanceData = (
       entitle: staffGender?.toLowerCase() === 'male' ? DEFAULT_ENTITLEMENTS.paternity : DEFAULT_ENTITLEMENTS.maternity,
       balance: staffGender?.toLowerCase() === 'male' 
         ? (leaveBalance as any).parternity_leave || 0
-        : (leaveBalance as any).marternity_leave || 0,
+        : (leaveBalance as any).maternity_leave || 0,
     },
     {
       leaveType: 'Leave With Pay',

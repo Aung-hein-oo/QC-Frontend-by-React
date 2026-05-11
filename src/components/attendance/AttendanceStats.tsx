@@ -6,9 +6,11 @@ type AttendanceStatsProps = {
   leave: number;
   halfLeave: number;
   absence: number;
+  total?: number;
+  filteredTotal?: number;
 };
 
-export const AttendanceStats = ({ present, leave, halfLeave, absence }: AttendanceStatsProps) => (
+export const AttendanceStats = ({ present, leave, halfLeave, absence, total, filteredTotal }: AttendanceStatsProps) => (
   <div className="grid grid-cols-4 gap-3">
     <StatCard label="Present" value={present} color="text-green-600" icon={CheckCircle} />
     <StatCard label="Leave" value={leave} color="text-red-600" icon={XCircle} />

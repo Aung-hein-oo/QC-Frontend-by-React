@@ -56,13 +56,6 @@ const AttendanceHomepage = () => {
     }
   }, [staff]);
 
-  const stats = {
-    present: attendance.filter(a => a.attendance_status?.toLowerCase() === 'present').length,
-    leave: attendance.filter(a => a.attendance_status?.toLowerCase() === 'leave').length,
-    halfLeave: attendance.filter(a => a.attendance_status?.toLowerCase() === 'half leave').length,
-    absence: attendance.filter(a => a.attendance_status?.toLowerCase() === 'absence').length,
-  };
-
   const userScope = staff ? getScope(staff.staff_position) : 'self';
   const showFullTable = userScope !== 'self';
   const isAdmin = staff?.staff_position === 'Admin';
@@ -92,6 +85,55 @@ const AttendanceHomepage = () => {
     setShowLogoutModal(false);
     showNotification('You have been successfully logged out.', 'success');
   };
+
+  // Filter state to sync with AttendanceTable
+  const [currentFilters, setCurrentFilters] = useState<any>({});
+
+  // Calculate stats from filtered attendance data (not all data)
+  const getFilteredStats = () => {
+    let filteredAttendance = [...attendance];
+
+    // Apply same filters as AttendanceTable
+    if (currentFilters.date) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.date.includes(currentFilters.date)
+      );
+    }
+    if (currentFilters.attendance_status) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.attendance_status === currentFilters.attendance_status
+      );
+    }
+    if (currentFilters.attendance_type) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.attendance_type?.toLowerCase().includes(currentFilters.attendance_type.toLowerCase())
+      );
+    }
+    if (currentFilters.staff_id && showFullTable) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.staff_id?.toLowerCase().includes(currentFilters.staff_id.toLowerCase())
+      );
+    }
+    if (currentFilters.staff_name && showFullTable) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.staff?.staff_name?.toLowerCase().includes(currentFilters.staff_name.toLowerCase())
+      );
+    }
+    if (currentFilters.remark) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.remark?.toLowerCase().includes(currentFilters.remark.toLowerCase())
+      );
+    }
+
+    return {
+      present: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'present').length,
+      leave: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'leave').length,
+      halfLeave: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'half leave').length,
+      absence: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'absence').length,
+    };
+  };
+
+  const stats = getFilteredStats();
 
   if (loading) {
     return (
@@ -188,6 +230,8 @@ const AttendanceHomepage = () => {
                   leave={stats.leave}
                   halfLeave={stats.halfLeave}
                   absence={stats.absence}
+                  total={attendance.length}
+                  filteredTotal={stats.present + stats.leave + stats.halfLeave + stats.absence}
                 />
               </div>
             </div>
@@ -207,6 +251,7 @@ const AttendanceHomepage = () => {
               updatingTypeId={updatingTypeId}
               availableTypes={availableTypes}
               defaultDateFilter={getDefaultDateFilter()}
+              onFilterChange={setCurrentFilters}
             />
           </div>
           
