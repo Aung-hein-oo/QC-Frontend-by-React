@@ -7,7 +7,9 @@ interface SuccessModalProps {
   title: string;
   message?: string;
   action?: string;
+  actionLabel?: string; // New: custom label for the action (e.g., "Added", "Updated", "Approved")
   actionColor?: string;
+  customMessage?: string; // New: completely custom message instead of auto-generated
 }
 
 export const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -16,7 +18,9 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
   title,
   message,
   action,
+  actionLabel,
   actionColor = 'emerald',
+  customMessage,
 }) => {
   if (!isOpen) return null;
 
@@ -28,10 +32,24 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
         return 'bg-blue-500 shadow-blue-200';
       case 'green':
         return 'bg-green-500 shadow-green-200';
+      case 'rose':
+        return 'bg-rose-500 shadow-rose-200';
       default:
         return 'bg-emerald-500 shadow-emerald-200';
     }
   };
+
+  // Generate default message if not provided
+  const getDefaultMessage = () => {
+    if (customMessage) return customMessage;
+    if (message) return message;
+    if (action && actionLabel) {
+      return `The item has been successfully ${actionLabel.toLowerCase()}.`;
+    }
+    return undefined;
+  };
+
+  const displayMessage = getDefaultMessage();
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -43,14 +61,14 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
         
         <h2 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h2>
         
-        {message && (
-          <p className="text-slate-500 text-sm mt-2 font-medium">{message}</p>
+        {displayMessage && (
+          <p className="text-slate-500 text-sm mt-2 font-medium">{displayMessage}</p>
         )}
         
-        {action && (
+        {action && actionLabel && !displayMessage && (
           <p className="text-slate-500 text-sm mt-2 font-medium">
-            The leave request has been successfully{' '}
-            <span className={`text-${actionColor}-600 font-bold uppercase`}>{action}</span>.
+            The request has been successfully{' '}
+            <span className={`text-${actionColor}-600 font-bold uppercase`}>{actionLabel}</span>.
           </p>
         )}
         

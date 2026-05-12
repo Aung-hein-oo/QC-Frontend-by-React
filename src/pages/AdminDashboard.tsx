@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStaffManagement } from '../hooks/useStaffManagement';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -16,40 +16,22 @@ const AdminDashboard: React.FC = () => {
   const { showNotification } = useNotification();
   const { confirmModal, successModal, showConfirm, closeConfirm, showSuccess, closeSuccess } = useModals();
   
+  const [importingStaffExcel, setImportingStaffExcel] = useState(false);
+  const [importingHolidayExcel, setImportingHolidayExcel] = useState(false);
+  
   const {
-    staffList,
-    divisions,
-    departments,
-    teams,
-    importStaffExcel,
-    importHolidayExcel,
-    loading,
-    showModal,
-    showViewModal,
-    editingStaff,
-    viewingStaff,
-    isSubmitting,
-    generatedStaffId,
-    importingHoliday,
-    holidayImportProgress,
-    updateGeneratedStaffId,
-    fetchDepartmentsByDivision,
-    fetchTeamsByDepartment,
-    addStaff,
-    updateStaff,
-    deleteStaff,
-    openAdd: openAddModal,
-    openEdit: openEditModal,
-    openView: openViewModal,
-    close: closeModals,
+    staffList, divisions, departments, teams, loading, showModal, showViewModal,
+    editingStaff, viewingStaff, isSubmitting, generatedStaffId, updateGeneratedStaffId,
+    fetchDepartmentsByDivision, fetchTeamsByDepartment, addStaff, updateStaff, deleteStaff,
+    openAdd, openEdit, openView, close: closeModals,
+    importStaffExcel, importHolidayExcel,
   } = useStaffManagement();
 
   const currentUser = React.useMemo(() => {
     try {
       const storedStaff = localStorage.getItem('staff');
       return storedStaff ? JSON.parse(storedStaff) : null;
-    } catch (error) {
-      console.error('Error parsing staff data:', error);
+    } catch {
       return null;
     }
   }, []);
@@ -64,136 +46,74 @@ const AdminDashboard: React.FC = () => {
         setTimeout(() => navigate('/'), 1500);
         return;
       }
-
       if (!isAdmin) {
-        showNotification(
-          `Access Denied: ${currentUser?.staff_position || 'User'} users do not have permission.`,
-          'error'
-        );
+        showNotification(`Access Denied: ${currentUser?.staff_position || 'User'} users do not have permission.`, 'error');
         setTimeout(() => navigate('/dashboard'), 1500);
-        return;
       }
     }
   }, [isAdmin, currentUser, loading, navigate, showNotification]);
 
   const handleSubmit = async (formData: any) => {
-    if (editingStaff) {
-      const success = await updateStaff(formData, editingStaff.staff_id);
-      if (success) {
-        showSuccess(
-          'Staff Updated',
-          `${formData.staff_name} has been successfully updated.`,
-          'Updated',
-          'blue'
-        );
-      }
-    } else {
-      const success = await addStaff(formData);
-      if (success) {
-        showSuccess(
-          'Staff Added',
-          `${formData.staff_name} has been successfully added to the system.`,
-          'Added',
-          'emerald'
-        );
-      }
+    const success = editingStaff 
+      ? await updateStaff(formData, editingStaff.staff_id)
+      : await addStaff(formData);
+    
+    if (success) {
+      showSuccess(
+        editingStaff ? 'Staff Updated' : 'Staff Added',
+        `${formData.staff_name} has been successfully ${editingStaff ? 'updated' : 'added'}.`,
+        editingStaff ? 'Updated' : 'Added',
+        editingStaff ? 'blue' : 'emerald'
+      );
     }
   };
 
   const handleDeleteStaff = (staffId: string) => {
     const staffToDelete = staffList.find(s => s.staff_id === staffId);
-    
     showConfirm(
       'Delete Staff Member',
       `Are you sure you want to delete ${staffToDelete?.staff_name || 'this staff member'}? This action cannot be undone.`,
       async () => {
-       await deleteStaff(staffId);
-          showSuccess(
-            'Staff Deleted',
-            `${staffToDelete?.staff_name || 'Staff member'} has been successfully deleted.`,
-            'Deleted',
-            'rose'
-          );
+        await deleteStaff(staffId);
+        showSuccess('Staff Deleted', `${staffToDelete?.staff_name} has been successfully deleted.`, 'Deleted', 'rose');
       },
-      'Delete',
-      'Cancel',
-      'warning'
+      'Delete', 'Cancel', 'warning'
     );
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const holidayFileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const success = await importStaffExcel(file);
+  const handleImport = async (file: File, type: 'staff' | 'holiday') => {
+    const setImporting = type === 'staff' ? setImportingStaffExcel : setImportingHolidayExcel;
+    const importFn = type === 'staff' ? importStaffExcel : importHolidayExcel;
+    const successMessage = type === 'staff' ? 'Staff data' : 'Holiday data';
+    
+    setImporting(true);
+    try {
+      const success = await importFn(file);
       if (success) {
-        showSuccess(
-          'Import Successful',
-          'Staff data has been successfully imported from Excel.',
-          'Imported',
-          'emerald'
-        );
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+        showSuccess('Import Successful', `${successMessage} has been successfully imported.`, 'Imported', 'emerald');
       } else {
-        showConfirm(
-          'Import Failed',
-          'There was an error importing the staff data. Please check the file format and try again.',
-          () => Promise.resolve(),
-          'OK',
-          '',
-          'error',
-          false
-        );
+        showConfirm('Import Failed', `Failed to import ${successMessage.toLowerCase()}. Check file format.`, () => {}, 'OK', '', 'error', false);
       }
+    } catch {
+      showConfirm('Import Failed', `Error importing ${successMessage.toLowerCase()}.`, () => {}, 'OK', '', 'error', false);
+    } finally {
+      setImporting(false);
+      if (type === 'staff' && fileInputRef.current) fileInputRef.current.value = '';
+      if (type === 'holiday' && holidayFileInputRef.current) holidayFileInputRef.current.value = '';
     }
   };
 
-  const handleHolidayFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const success = await importHolidayExcel(file);
-      if (success) {
-        showSuccess(
-          'Holiday Import Successful',
-          'Holiday data has been successfully imported from Excel.',
-          'Imported',
-          'emerald'
-        );
-        if (holidayFileInputRef.current) {
-          holidayFileInputRef.current.value = '';
-        }
-      } else {
-        showConfirm(
-          'Import Failed',
-          'There was an error importing the holiday data. Please check the file format and try again.',
-          () => Promise.resolve(),
-          'OK',
-          '',
-          'error',
-          false
-        );
-      }
-    }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImport(file, 'staff');
   };
 
-  const handleExcelImport = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleHolidayImport = () => {
-    holidayFileInputRef.current?.click();
-  };
-
-  const handleDivisionChange = async (divisionId: number) => {
-    await fetchDepartmentsByDivision(divisionId);
-  };
-
-  const handleDepartmentChange = async (departmentId: number) => {
-    await fetchTeamsByDepartment(departmentId);
+  const handleHolidayFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImport(file, 'holiday');
   };
 
   if (loading) {
@@ -207,38 +127,21 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  if (!currentUser || !isAdmin) {
-    return null;
-  }
+  if (!currentUser || !isAdmin) return null;
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 overflow-hidden main-container-fix">
-      {/* Staff file input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        accept=".xlsx, .xls" 
-        className="hidden" 
-      />
-      
-      {/* Holiday file input */}
-      <input 
-        type="file" 
-        ref={holidayFileInputRef} 
-        onChange={handleHolidayFileChange} 
-        accept=".xlsx, .xls" 
-        className="hidden" 
-      />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".xlsx, .xls" className="hidden" />
+      <input type="file" ref={holidayFileInputRef} onChange={handleHolidayFileChange} accept=".xlsx, .xls" className="hidden" />
       
       <AdminHeader 
-        onAddStaff={openAddModal}
-        onImportExcel={handleExcelImport}
-        onAddHoliday={handleHolidayImport}
-        importing={isSubmitting}
+        onAddStaff={openAdd}
+        onImportExcel={() => fileInputRef.current?.click()}
+        onAddHoliday={() => holidayFileInputRef.current?.click()}
+        importing={false}
         importProgress={0}
-        importingHoliday={importingHoliday}
-        holidayImportProgress={holidayImportProgress}
+        importingHoliday={importingHolidayExcel}
+        holidayImportProgress={0}
       />
 
       <main className="flex-1 min-h-0 overflow-hidden">
@@ -246,14 +149,13 @@ const AdminDashboard: React.FC = () => {
           <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-visible table-container-fix">
             <StaffTable 
               staffList={staffList}
-              onView={openViewModal}
-              onEdit={openEditModal}
+              onView={openView}
+              onEdit={openEdit}
               onDelete={handleDeleteStaff}
               scrollable={true}
               fixedHeader={true}
             />
           </div>
-
           <div className="flex-shrink-0 mt-4 text-xs text-center text-gray-500 border-t pt-4">
             © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
           </div>
@@ -271,15 +173,15 @@ const AdminDashboard: React.FC = () => {
         onClose={closeModals}
         onSubmit={handleSubmit}
         onGenderChange={updateGeneratedStaffId}
-        onDivisionChange={handleDivisionChange}
-        onDepartmentChange={handleDepartmentChange}
+        onDivisionChange={fetchDepartmentsByDivision}
+        onDepartmentChange={fetchTeamsByDepartment}
       />
 
       <ViewStaffModal 
         isOpen={showViewModal}
         staff={viewingStaff}
         onClose={closeModals}
-        onEdit={() => viewingStaff && openEditModal(viewingStaff)}
+        onEdit={() => viewingStaff && openEdit(viewingStaff)}
       />
 
       <ConfirmModal
