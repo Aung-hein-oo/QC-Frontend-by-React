@@ -1,5 +1,7 @@
+// components/leaveform/LeaveForm.tsx
+
 import React from 'react';
-import { LEAVE_TYPES, APPROVERS, ATTACHMENT_REQUIRED_TYPES } from '../../utils/leave.constants';
+import { LEAVE_TYPES, ATTACHMENT_REQUIRED_TYPES } from '../../utils/leave.constants';
 import { LeaveRequestType } from '../../types/leave.types';
 
 interface LeaveFormProps {
@@ -7,8 +9,10 @@ interface LeaveFormProps {
     onInputChange: (e: React.ChangeEvent<any>) => void;
     onCheckboxChange: (approverId: string, checked: boolean) => void;
     onFileChange: (fileName: string) => void;
+    approvers: Array<{ id: string; name: string }>;
+    loadingApprovers?: boolean;
     isReadOnly?: boolean;
-    staffGender?: string
+    staffGender?: string;
 }
 
 export const LeaveForm: React.FC<LeaveFormProps> = ({
@@ -16,7 +20,8 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
     onInputChange,
     onCheckboxChange,
     onFileChange,
-
+    approvers,
+    loadingApprovers = false,
 }) => {
     return (
         <div className="space-y-6">
@@ -53,7 +58,7 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                                 const staffId = formData.staff_id || "";
                                 const starts25 = staffId.startsWith("25");
                                 const starts26 = staffId.startsWith("26");
-                                // Staff ID rules (new logic)
+                                
                                 if (type.value === "maternity" && starts25) return false;
                                 if (type.value === "paternity" && starts26) return false;
 
@@ -142,24 +147,48 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     />
                 </div>
 
-                {/* Approver */}
-                <div>
+                {/* Approver - Dynamic from API + Hardcoded User */}
+                <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Approver *
+                        Approver(s) *
                     </label>
-                    <div className="flex items-center gap-6">
-                        {APPROVERS.map(approver => (
-                            <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600">
+                    {loadingApprovers ? (
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                            <span className="text-sm">Loading approvers...</span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap items-center gap-6">
+                            {/* Hardcoded Approver: Kay Thi Khine */}
+                            <label className="flex items-center gap-2 text-sm text-slate-600 font-semibold">
                                 <input
                                     type="checkbox"
-                                    checked={formData.approved_by.includes(approver.id)}
-                                    onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded"
+                                    checked={formData.approved_by.includes('kay-thi-khine-static')}
+                                    onChange={(e) => onCheckboxChange('kay-thi-khine-static', e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                 />
-                                {approver.name}
+                                Kay Thi Khine
                             </label>
-                        ))}
-                    </div>
+
+                            {/* Dynamic Approvers from API */}
+                            {approvers.map(approver => (
+                                <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600 font-semibold">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.approved_by.includes(approver.id)}
+                                        onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                    />
+                                    {approver.name}
+                                </label>
+                            ))}
+
+                            {/* Fallback if no dynamic approvers and Kay Thi Khine isn't enough */}
+                            {approvers.length === 0 && !formData.approved_by.includes('kay-thi-khine-static') && (
+                                <p className="text-sm text-amber-600">Admin will approve.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Applied Date */}
