@@ -11,36 +11,36 @@ interface LeaveTableProps {
 
 // ReasonCell component with its own state isolated
 const ReasonCell = ({ reason, rowId }: { reason: string; rowId: string | number }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const maxLength = 100;
-  const needsTruncation = reason && reason.length > maxLength;
-  
-  if (!reason || reason === '-') return <span className="text-gray-400">-</span>;
-  
-  // Stop propagation to prevent row clicks from interfering
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsExpanded(!isExpanded);
-  };
-  
-  return (
-    <div className="flex items-start gap-2">
-      <div className="flex-1">
-        <span className="text-sm text-gray-600 break-words">
-          {isExpanded ? reason : `${reason.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
-        </span>
-      </div>
-      {needsTruncation && (
-        <button
-          onClick={handleToggle}
-          className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1 focus:outline-none"
-        >
-          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          <span>{isExpanded ? 'See less' : 'See more'}</span>
-        </button>
-      )}
-    </div>
-  );
+    const [isExpanded, setIsExpanded] = useState(false);
+    const maxLength = 100;
+    const needsTruncation = reason && reason.length > maxLength;
+
+    if (!reason || reason === '-') return <span className="text-gray-400">-</span>;
+
+    // Stop propagation to prevent row clicks from interfering
+    const handleToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsExpanded(!isExpanded);
+    };
+
+    return (
+        <div className="flex items-start gap-2">
+            <div className="flex-1">
+                <span className="text-sm text-gray-600 break-words">
+                    {isExpanded ? reason : `${reason.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
+                </span>
+            </div>
+            {needsTruncation && (
+                <button
+                    onClick={handleToggle}
+                    className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1 focus:outline-none"
+                >
+                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    <span>{isExpanded ? 'See less' : 'See more'}</span>
+                </button>
+            )}
+        </div>
+    );
 };
 
 export const LeaveTable: React.FC<LeaveTableProps> = ({ data, onEdit, onDelete }) => {
