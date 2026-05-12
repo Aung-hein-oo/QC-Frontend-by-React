@@ -15,6 +15,9 @@ const UserProfile: React.FC = () => {
     
     const { 
         leaveBalance, 
+        totalWorkingDays,
+        workingDays,
+        leaveDays,
         loading: leaveLoading, 
         error: leaveError, 
     } = useLeaveBalance(staff?.staff_id);
@@ -32,11 +35,11 @@ const UserProfile: React.FC = () => {
             <main className="flex-1 min-h-0 overflow-hidden">
                 <div className="h-full flex flex-col px-4 py-4">
                     {/* Calendar Picker - Fixed at top */}
-                    <div className="flex-shrink-0 mb-4">
+                    {/* <div className="flex-shrink-0 mb-4">
                         <div className="flex justify-end">
                             <CalendarPicker />
                         </div>
-                    </div>
+                    </div> */}
                     
                     {/* Scrollable Content Area - Full Width */}
                     <div className="flex-1 min-h-0 overflow-y-auto">
@@ -49,9 +52,11 @@ const UserProfile: React.FC = () => {
                             {/* RIGHT CONTENT - Takes remaining space */}
                             <div className="lg:col-span-9 space-y-6">
                                 <AttendanceStatsCards 
-                                    workingDays={6}
-                                    leaveDays={3}
-                                    halfLeaveDays={2}
+                                    totalWorkingDays={totalWorkingDays}
+                                    workingDays={workingDays}
+                                    leaveDays={leaveDays}
+                                    loading={leaveLoading}
+                                    error={leaveError}
                                 />
 
                                 <LeaveBalanceTable 
