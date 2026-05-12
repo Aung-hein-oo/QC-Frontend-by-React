@@ -1,9 +1,15 @@
+// hooks/useLeaveRequest.ts
+
 import { useState, useEffect } from 'react';
 import { LeaveRequestType } from '../types/leave.types';
 import { config } from '../utils/config';
 import { LEAVE_TYPES, ATTACHMENT_REQUIRED_TYPES } from '../utils/leave.constants';
 import { calculateTotalLeaveDays, getTodayDate } from '../utils/leave.utils';
-import { StaffMember } from '../types/index';
+
+interface Approver {
+    id: string;
+    name: string;
+}
 
 export const useLeaveRequest = (initialStaffId: string) => {
     useEffect(() => {
@@ -12,6 +18,8 @@ export const useLeaveRequest = (initialStaffId: string) => {
                 ...prev,
                 staff_id: initialStaffId
             }));
+            // Fetch approvers when staff_id is available
+            fetchApprovers(initialStaffId);
         }
     }, [initialStaffId]);
 
@@ -28,7 +36,49 @@ export const useLeaveRequest = (initialStaffId: string) => {
         apply_date: getTodayDate(),
         form_status: 'pending',
     });
-    const [error, setError] = useState('')
+    
+    const [error, setError] = useState('');
+    const [approvers, setApprovers] = useState<Approver[]>([]);
+    const [loadingApprovers, setLoadingApprovers] = useState(false);
+
+    const fetchApprovers = async (staffId: string) => {
+        if (!staffId) return;
+        
+        setLoadingApprovers(true);
+        try {
+            const response = await fetch(`${config.apiUrl}/leave-form/approver/${staffId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Transform the response into approvers array
+                const approversList: Approver[] = [];
+                
+                if (data.division_head) {
+                    approversList.push({
+                        id: 'division_head',
+                        name: data.division_head
+                    });
+                }
+                
+                if (data.department_head) {
+                    approversList.push({
+                        id: 'department_head',
+                        name: data.department_head
+                    });
+                }
+                
+                setApprovers(approversList);
+            }
+        } catch (err) {
+            console.error('Error fetching approvers:', err);
+        } finally {
+            setLoadingApprovers(false);
+        }
+    };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -77,6 +127,11 @@ export const useLeaveRequest = (initialStaffId: string) => {
 
         if (new Date(formData.req_leave_date_from) > new Date(formData.req_leave_date_to)) {
             setError('Start date cannot be after end date');
+            return false;
+        }
+
+        if (formData.approved_by.length === 0) {
+            setError('Please select at least one approver');
             return false;
         }
 
@@ -139,6 +194,8 @@ export const useLeaveRequest = (initialStaffId: string) => {
     return {
         formData,
         error,
+        approvers,
+        loadingApprovers,
         handleInputChange,
         handleCheckboxChange,
         handleFileChange,
