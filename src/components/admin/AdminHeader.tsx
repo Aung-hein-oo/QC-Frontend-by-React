@@ -482,7 +482,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
                       ) : (
                         <>
                           <Upload size={16} className="text-blue-600" />
-                          <span>Import Excel</span>
+                          <span>Import Staff</span>
                         </>
                       )}
                     </button>

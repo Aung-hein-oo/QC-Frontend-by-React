@@ -14,9 +14,9 @@ const AttendanceStatsCards: React.FC<AttendanceStatsCardsProps> = ({
   halfLeaveDays,
 }) => {
   const stats = [
-    { label: 'Working Days', value: workingDays.toString(), color: 'text-green-600', icon: CheckCircle },
-    { label: 'Leave Days', value: leaveDays.toString(), color: 'text-red-600', icon: XCircle },
-    { label: 'Half Leave Days', value: halfLeaveDays.toString(), color: 'text-amber-600', icon: Clock },
+    { label: 'Total Working Days', value: workingDays.toString(), color: 'text-green-600', icon: CheckCircle },
+    { label: 'Working Days', value: leaveDays.toString(), color: 'text-red-600', icon: XCircle },
+    { label: 'Total Leave Days', value: halfLeaveDays.toString(), color: 'text-amber-600', icon: Clock },
   ];
 
   return (

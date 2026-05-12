@@ -105,7 +105,7 @@ const LeaveApprove: React.FC = () => {
         setActionType("approved");
         showConfirm(
             'Confirm Approval',
-            `You are about to <strong class="text-emerald-600 font-bold">APPROVE</strong> the leave request for <strong>${row.staff_name}</strong>.`,
+            `You are about to approve this leave request.`,
             handleAction,
             'Approve',
             'Cancel',
@@ -118,7 +118,7 @@ const LeaveApprove: React.FC = () => {
         setActionType("rejected");
         showConfirm(
             'Confirm Rejection',
-            `You are about to <strong class="text-rose-600 font-bold">REJECT</strong> the leave request for <strong>${row.staff_name}</strong>.`,
+            `You are about to reject this leave request.`,
             handleAction,
             'Reject',
             'Cancel',
