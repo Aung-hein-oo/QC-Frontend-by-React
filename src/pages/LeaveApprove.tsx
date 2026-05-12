@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-import { CheckCircle, XCircle, User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
-=======
+
 import React, { useState } from 'react';
 import { User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
->>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
 import Header from '../components/profile/Header';
 import { useLeaveApprove } from '../hooks/useLeaveApprove';
 import { config } from '../utils/config';
@@ -231,12 +227,7 @@ const LeaveApprove: React.FC = () => {
                             </table>
                         </div>
                     </div>
-<<<<<<< HEAD
-
-                    {/* Pagination - fixed at bottom */}
-=======
                     
->>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
                     <div className="border-t border-slate-200 bg-white flex-shrink-0">
                         <Pagination
                             currentPage={currentPage}
@@ -255,75 +246,6 @@ const LeaveApprove: React.FC = () => {
                 </div>
             </main>
 
-<<<<<<< HEAD
-            {/* CONFIRMATION MODAL */}
-            {showConfirm && (
-                <div className="fixed inset-0 flex items-start justify-center bg-black/20 pt-20 z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-80 p-5 animate-fade-in text-center">
-                        <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
-                            ? "bg-emerald-100 text-emerald-600"
-                            : "bg-rose-100 text-rose-600"
-                            }`}>
-                            {actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved" ? (
-                                <CheckCircle size={32} />
-                            ) : (
-                                <XCircle size={32} />
-                            )}
-                        </div>
-                        <h2 className="text-lg font-black text-slate-800 text-center">Are you sure?</h2>
-                        <p className="text-slate-500 text-sm mt-2 mb-6 italic leading-relaxed text-center">
-                            You are about to <span className={`font-bold ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
-                                ? "text-emerald-600" : "text-rose-600"
-                                }`}>
-                                {actionType}
-                            </span> the leave request.<br />
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                onClick={() => setShowConfirm(false)}
-                                className="py-3 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-colors uppercase text-[11px] tracking-wider"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => {
-                                    handleAction();
-                                    setShowConfirm(false);
-                                }}
-                                className={`py-3 text-white font-black rounded-2xl shadow-lg transition-all active:scale-95 uppercase text-[11px] tracking-wider ${actionType?.toLowerCase() === "approve" || actionType?.toLowerCase() === "approved"
-                                    ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
-                                    : "bg-rose-600 hover:bg-rose-700 shadow-rose-200"
-                                    }`}
-                            >
-                                {actionType}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* SUCCESS MODAL */}
-            {showSuccess && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-emerald-900/20 backdrop-blur-[2px]" />
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xs p-8 text-center animate-in zoom-in slide-in-from-bottom-4 duration-300">
-                        <div className="mx-auto w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-200">
-                            <CheckCircle size={48} className="text-white" />
-                        </div>
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Success!</h2>
-                        <p className="text-slate-500 text-sm mt-2 font-medium">
-                            The leave request has been successfully <span className="text-emerald-600 font-bold uppercase">{actionType}</span>.
-                        </p>
-                        <button
-                            onClick={() => setShowSuccess(false)}
-                            className="mt-8 w-full py-3 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
-                        >
-                            Got it
-                        </button>
-                    </div>
-                </div>
-            )}
-=======
             <ConfirmModal
                 isOpen={confirmModal.isOpen}
                 onClose={closeConfirm}
@@ -345,7 +267,6 @@ const LeaveApprove: React.FC = () => {
                 action={successModal.action}
                 actionColor={successModal.actionColor}
             />
->>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
         </div>
     );
 };
