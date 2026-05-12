@@ -1,12 +1,19 @@
+<<<<<<< HEAD
 import { CheckCircle, XCircle, User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
+=======
+import React, { useState } from 'react';
+import { User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
+>>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
 import Header from '../components/profile/Header';
 import { useLeaveApprove } from '../hooks/useLeaveApprove';
 import { config } from '../utils/config';
 import { Pagination } from '../components/common/Pagination';
-import { useAttendance } from '../hooks//useAttendance';
+import { useAttendance } from '../hooks/useAttendance';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { SuccessModal } from '../components/common/SuccessModal';
+import { useModals } from '../hooks/useModals';
 
-// Add this new component
 const ReasonCell = ({ reason }: { reason: string }) => {
     const [expanded, setExpanded] = useState(false);
     const maxLength = 100;
@@ -36,13 +43,14 @@ const ReasonCell = ({ reason }: { reason: string }) => {
 
 const LeaveApprove: React.FC = () => {
     const { leaveList, loading, refreshLeave } = useLeaveApprove();
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
     const [actionType, setActionType] = useState("");
     const [selectedRow, setSelectedRow] = useState<any>(null);
     const { allStaffList } = useAttendance();
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    
+    const { confirmModal, successModal, showConfirm, closeConfirm, showSuccess, closeSuccess } = useModals();
+
     const totalItems = leaveList.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -66,17 +74,61 @@ const LeaveApprove: React.FC = () => {
 
             if (res.ok) {
                 await refreshLeave();
-                setShowConfirm(false);
-                setShowSuccess(true);
-
-                setTimeout(() => setShowSuccess(false), 2500);
+                showSuccess(
+                    'Success!',
+                    undefined,
+                    actionType,
+                    actionType === 'approved' ? 'emerald' : 'rose'
+                );
             } else {
                 const errorData = await res.json().catch(() => ({}));
-                alert(`Error: ${errorData.detail || "Failed to update status"}`);
+                showConfirm(
+                    'Error',
+                    errorData.detail || "Failed to update status",
+                    () => Promise.resolve(),
+                    'OK',
+                    '',
+                    'error',
+                    false
+                );
             }
         } catch (err) {
-            alert("Network error occurred.");
+            showConfirm(
+                'Network Error',
+                'Failed to connect to server. Please try again.',
+                () => Promise.resolve(),
+                'OK',
+                '',
+                'error',
+                false
+            );
         }
+    };
+
+    const handleApprove = (row: any) => {
+        setSelectedRow(row);
+        setActionType("approved");
+        showConfirm(
+            'Confirm Approval',
+            `You are about to approve this leave request.`,
+            handleAction,
+            'Approve',
+            'Cancel',
+            'warning'
+        );
+    };
+
+    const handleReject = (row: any) => {
+        setSelectedRow(row);
+        setActionType("rejected");
+        showConfirm(
+            'Confirm Rejection',
+            `You are about to reject this leave request.`,
+            handleAction,
+            'Reject',
+            'Cancel',
+            'warning'
+        );
     };
 
     return (
@@ -93,8 +145,7 @@ const LeaveApprove: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-black shadow-xl shadow-slate-200/50 flex flex-col flex-1 min-h-0 overflow-hidden">
-                    {/* Scrollable table container */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 flex flex-col flex-1 min-h-0 overflow-hidden">
                     <div className="flex-1 min-h-0 overflow-auto">
                         <div className="min-w-full inline-block align-middle">
                             <table className="min-w-full border-collapse">
@@ -137,11 +188,9 @@ const LeaveApprove: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="inline-flex w-fit px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100">
-                                                            {row.leave_type}
-                                                        </span>
-                                                    </div>
+                                                    <span className="inline-flex w-fit px-2 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-black uppercase border border-blue-100">
+                                                        {row.leave_type}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-5 min-w-[250px] max-w-[300px]">
                                                     <ReasonCell reason={row.reason} />
@@ -162,13 +211,13 @@ const LeaveApprove: React.FC = () => {
                                                 <td className="px-6 py-5 text-right sticky right-0 bg-white group-hover:bg-slate-50/50 transition-colors">
                                                     <div className="flex justify-end gap-2">
                                                         <button
-                                                            onClick={() => { setSelectedRow(row); setActionType("approved"); setShowConfirm(true); }}
+                                                            onClick={() => handleApprove(row)}
                                                             className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100"
                                                         >
                                                             APPROVE
                                                         </button>
                                                         <button
-                                                            onClick={() => { setSelectedRow(row); setActionType("rejected"); setShowConfirm(true); }}
+                                                            onClick={() => handleReject(row)}
                                                             className="px-4 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold hover:bg-rose-600 hover:text-white transition-all border border-rose-100"
                                                         >
                                                             REJECT
@@ -182,8 +231,12 @@ const LeaveApprove: React.FC = () => {
                             </table>
                         </div>
                     </div>
+<<<<<<< HEAD
 
                     {/* Pagination - fixed at bottom */}
+=======
+                    
+>>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
                     <div className="border-t border-slate-200 bg-white flex-shrink-0">
                         <Pagination
                             currentPage={currentPage}
@@ -202,6 +255,7 @@ const LeaveApprove: React.FC = () => {
                 </div>
             </main>
 
+<<<<<<< HEAD
             {/* CONFIRMATION MODAL */}
             {showConfirm && (
                 <div className="fixed inset-0 flex items-start justify-center bg-black/20 pt-20 z-50">
@@ -269,6 +323,29 @@ const LeaveApprove: React.FC = () => {
                     </div>
                 </div>
             )}
+=======
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={closeConfirm}
+                onConfirm={confirmModal.onConfirm}
+                type={confirmModal.type}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmText={confirmModal.confirmText}
+                cancelText={confirmModal.cancelText}
+                showCancel={confirmModal.showCancel}
+                isLoading={confirmModal.isLoading}
+            />
+
+            <SuccessModal
+                isOpen={successModal.isOpen}
+                onClose={closeSuccess}
+                title={successModal.title}
+                message={successModal.message}
+                action={successModal.action}
+                actionColor={successModal.actionColor}
+            />
+>>>>>>> f38ace71597cad015e57e5297fc8afee6bf52d07
         </div>
     );
 };

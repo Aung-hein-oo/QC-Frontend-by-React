@@ -98,14 +98,6 @@ export const AttendanceTableHeader: React.FC<AttendanceTableHeaderProps> = ({
                 onChange={(e) => onFilterChange('date', e.target.value)}
                 className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              {/* {filters.date && (
-                <button
-                  onClick={() => onClearFilter('date')}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={12} />
-                </button>
-              )} */}
             </div>
           </div>
         </th>

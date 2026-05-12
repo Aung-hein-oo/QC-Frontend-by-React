@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import React from 'react';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { AttendanceRecord, StaffMember } from '../../types';
 import { Pagination } from '../common/Pagination';
@@ -22,7 +23,8 @@ type AttendanceTableProps = {
   availableTypes?: string[];
   scrollable?: boolean;
   fixedHeader?: boolean;
-  defaultDateFilter?: string; // New prop for default date filter
+  defaultDateFilter?: string;
+  onFilterChange?: (filters: any) => void;
 };
 
 type FilterState = {
@@ -96,6 +98,7 @@ export const AttendanceTable = ({
   updatingTypeId: externalUpdatingTypeId,
   availableTypes = [],
   defaultDateFilter,
+  onFilterChange,
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
@@ -117,6 +120,10 @@ export const AttendanceTable = ({
   const updatingId = externalUpdatingId !== undefined ? externalUpdatingId : localUpdatingId;
   const updatingTypeId = externalUpdatingTypeId !== undefined ? externalUpdatingTypeId : localUpdatingTypeId;
 
+  const sortedAttendance = [...attendance].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
+  
   const filteredRecords = attendance.filter(record => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
@@ -129,6 +136,12 @@ export const AttendanceTable = ({
       return true;
     });
   });
+
+  React.useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(filters);
+    }
+  }, [filters, onFilterChange]);
 
   const totalItems = filteredRecords.length;
   const totalPages = Math.ceil(totalItems / pageSize);
@@ -174,7 +187,7 @@ export const AttendanceTable = ({
       
       if (result.success) {
         showNotification(`✓ Status updated to "${newStatus}"`, 'success');
-        await onStatusUpdate?.();
+        // await onStatusUpdate?.();
         setOpenStatusDropdownId(null);
       } else {
         showNotification(result.error || 'Failed to update status', 'error');
@@ -205,7 +218,7 @@ export const AttendanceTable = ({
       
       if (result.success) {
         showNotification(`✓ Type updated to "${newType}"`, 'success');
-        await onStatusUpdate?.();
+        // await onStatusUpdate?.();
         setOpenTypeDropdownId(null);
       } else {
         showNotification(result.error || 'Failed to update type', 'error');

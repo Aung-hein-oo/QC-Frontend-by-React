@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Calendar, User, Building2, Users, Flag, Loader } from 'lucide-react';
+import { Calendar, User, Building2, Users, Flag, Loader, ClipboardList } from 'lucide-react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useOrganization } from '../hooks/useOrganization';
 import { AttendanceStats } from '../components/attendance/AttendanceStats';
@@ -56,13 +56,6 @@ const AttendanceHomepage = () => {
     }
   }, [staff]);
 
-  const stats = {
-    present: attendance.filter(a => a.attendance_status?.toLowerCase() === 'present').length,
-    leave: attendance.filter(a => a.attendance_status?.toLowerCase() === 'leave').length,
-    halfLeave: attendance.filter(a => a.attendance_status?.toLowerCase() === 'half leave').length,
-    absence: attendance.filter(a => a.attendance_status?.toLowerCase() === 'absence').length,
-  };
-
   const userScope = staff ? getScope(staff.staff_position) : 'self';
   const showFullTable = userScope !== 'self';
   const isAdmin = staff?.staff_position === 'Admin';
@@ -92,6 +85,55 @@ const AttendanceHomepage = () => {
     setShowLogoutModal(false);
     showNotification('You have been successfully logged out.', 'success');
   };
+
+  // Filter state to sync with AttendanceTable
+  const [currentFilters, setCurrentFilters] = useState<any>({});
+
+  // Calculate stats from filtered attendance data (not all data)
+  const getFilteredStats = () => {
+    let filteredAttendance = [...attendance];
+
+    // Apply same filters as AttendanceTable
+    if (currentFilters.date) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.date.includes(currentFilters.date)
+      );
+    }
+    if (currentFilters.attendance_status) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.attendance_status === currentFilters.attendance_status
+      );
+    }
+    if (currentFilters.attendance_type) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.attendance_type?.toLowerCase().includes(currentFilters.attendance_type.toLowerCase())
+      );
+    }
+    if (currentFilters.staff_id && showFullTable) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.staff_id?.toLowerCase().includes(currentFilters.staff_id.toLowerCase())
+      );
+    }
+    if (currentFilters.staff_name && showFullTable) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.staff?.staff_name?.toLowerCase().includes(currentFilters.staff_name.toLowerCase())
+      );
+    }
+    if (currentFilters.remark) {
+      filteredAttendance = filteredAttendance.filter(record => 
+        record.remark?.toLowerCase().includes(currentFilters.remark.toLowerCase())
+      );
+    }
+
+    return {
+      present: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'present').length,
+      leave: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'leave').length,
+      halfLeave: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'half leave').length,
+      absence: filteredAttendance.filter(a => a.attendance_status?.toLowerCase() === 'absence').length,
+    };
+  };
+
+  const stats = getFilteredStats();
 
   if (loading) {
     return (
@@ -164,16 +206,38 @@ const AttendanceHomepage = () => {
       </header>
 
       <main className="flex-1 min-h-0 overflow-hidden px-4 py-4">
-        <div className="h-full flex flex-col gap-4">
+        <div className="h-full flex flex-col gap-3">
+          {/* Page Header with Title/Description and Stats Cards side by side */}
           <div className="flex-shrink-0">
-            <AttendanceStats 
-              present={stats.present}
-              leave={stats.leave}
-              halfLeave={stats.halfLeave}
-              absence={stats.absence}
-            />
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+              {/* Left side - Title and Description */}
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ClipboardList className="text-blue-600" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Attendance Records</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Track and manage daily staff attendance records
+                  </p>
+                </div>
+              </div>
+              
+              {/* Right side - Stats Cards */}
+              <div className="flex-shrink-0">
+                <AttendanceStats 
+                  present={stats.present}
+                  leave={stats.leave}
+                  halfLeave={stats.halfLeave}
+                  absence={stats.absence}
+                  total={attendance.length}
+                  filteredTotal={stats.present + stats.leave + stats.halfLeave + stats.absence}
+                />
+              </div>
+            </div>
           </div>
 
+          {/* Attendance Table */}
           <div className="flex-1 min-h-0 bg-white rounded-xl border shadow-sm flex flex-col overflow-hidden">
             <AttendanceTable 
               attendance={attendance}
@@ -187,10 +251,11 @@ const AttendanceHomepage = () => {
               updatingTypeId={updatingTypeId}
               availableTypes={availableTypes}
               defaultDateFilter={getDefaultDateFilter()}
+              onFilterChange={setCurrentFilters}
             />
           </div>
           
-          <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-4">
+          <div className="flex-shrink-0 text-xs text-center text-gray-500 border-t pt-3">
             © 2026 Attendance Management System by <span className="font-bold text-slate-500">MODOS</span>. All rights reserved.
           </div>
         </div>

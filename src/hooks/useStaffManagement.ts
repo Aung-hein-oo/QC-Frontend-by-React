@@ -15,6 +15,8 @@ export const useStaffManagement = () => {
     viewingStaff: null as StaffMember | null,
     isSubmitting: false,
     generatedStaffId: '',
+    importingHoliday: false,
+    holidayImportProgress: 0,
   });
 
   // Helper: API request with error handling
@@ -101,16 +103,12 @@ export const useStaffManagement = () => {
     console.log('staff_permanent_status from form:', formData.staff_permanent_status);
     
     try {
-      // FIX: Don't hardcode 'No' - use the value from formData
       const data = clean({
         ...formData,
         staff_id: !isEdit ? (formData.staff_id || state.generatedStaffId) : undefined,
-        // Remove the hardcoded 'No' and use the actual value from form
-        // staff_permanent_status is already in formData, so we don't need to set it again
         staff_password: formData.staff_password || 'xxxxxx',
       });
       
-      // If editing and staff_permanent_status is not in formData, add it from editingStaff
       if (isEdit && !data.staff_permanent_status && state.editingStaff) {
         data.staff_permanent_status = state.editingStaff.staff_permanent_status || 'No';
       }
@@ -124,14 +122,12 @@ export const useStaffManagement = () => {
       
       console.log('API Response:', result);
       
-      alert(`Staff ${isEdit ? 'updated' : 'added'} successfully`);
       setState(prev => ({ ...prev, showModal: false, generatedStaffId: '' }));
       await fetchData.staff();
       return true;
     } catch (error: any) {
       console.error('Error in handleSubmit:', error);
       const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
-      alert(`Failed to ${isEdit ? 'update' : 'add'} staff:\n${msg}`);
       return false;
     } finally {
       setState(prev => ({ ...prev, isSubmitting: false }));
@@ -142,14 +138,13 @@ export const useStaffManagement = () => {
   const updateStaff = (formData: StaffFormData, id: string) => handleSubmit(formData, true, id);
 
   const deleteStaff = async (id: string) => {
-    if (!window.confirm('Delete this staff member?')) return;
     try {
       await apiRequest(`${config.apiUrl}/staff/${id}`, { method: 'DELETE' });
-      alert('Staff deleted successfully');
       await fetchData.staff();
+      return true;
     } catch (error: any) {
       const msg = error.detail?.map((e: any) => e.msg).join('\n') || error.message;
-      alert(`Failed to delete staff:\n${msg}`);
+      return false;
     }
   };
 
@@ -177,7 +172,7 @@ export const useStaffManagement = () => {
     setState(prev => ({ ...prev, isSubmitting: true }));
     
     const formData = new FormData();
-    formData.append('file', file); // The key 'file' must match what your backend expects
+    formData.append('file', file);
 
     try {
       const token = localStorage.getItem('token');
@@ -185,8 +180,6 @@ export const useStaffManagement = () => {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          // Note: Do NOT set Content-Type header when sending FormData, 
-          // the browser will set it automatically with the boundary string
         },
         body: formData,
       });
@@ -195,18 +188,60 @@ export const useStaffManagement = () => {
         const error = await response.json();
         throw error;
       }
-
-      const result = await response.json();
-      alert(result.message || 'Excel imported successfully');
-      await fetchData.staff(); // Refresh the list
+      await fetchData.staff();
       return true;
     } catch (error: any) {
       console.error('Error importing Excel:', error);
-      const msg = error.detail || error.message || 'Failed to upload file';
-      alert(`Import failed: ${msg}`);
       return false;
     } finally {
       setState(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+
+  const importHolidayExcel = async (file: File) => {
+    setState(prev => ({ ...prev, importingHoliday: true, holidayImportProgress: 0 }));
+    
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setState(prev => ({
+          ...prev,
+          holidayImportProgress: Math.min(prev.holidayImportProgress + 10, 90)
+        }));
+      }, 200);
+
+      const response = await fetch(`${config.apiUrl}/holiday/import`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      clearInterval(progressInterval);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw error;
+      }
+
+      // Set progress to 100% on success
+      setState(prev => ({ ...prev, holidayImportProgress: 100 }));
+      
+      // Wait a moment to show 100% before resetting
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return true;
+    } catch (error: any) {
+      console.error('Error importing holidays:', error);
+      return false;
+    } finally {
+      setState(prev => ({ ...prev, importingHoliday: false, holidayImportProgress: 0 }));
     }
   };
 
@@ -238,9 +273,12 @@ export const useStaffManagement = () => {
     generatedStaffId: state.generatedStaffId,
     showModal: state.showModal,
     showViewModal: state.showViewModal,
-    importStaffExcel,
+    importingHoliday: state.importingHoliday,
+    holidayImportProgress: state.holidayImportProgress,
     
     // Actions
+    importStaffExcel,
+    importHolidayExcel,
     updateGeneratedStaffId: (gender: string) => setState(prev => ({ 
       ...prev, 
       generatedStaffId: generateStaffId(gender) 

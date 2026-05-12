@@ -122,7 +122,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
             const data = await res.json();
 
             if (res.ok) {
-                alert(isEdit ? "Leave Updated Successfully!" : "Leave Submitted Successfully!");
                 setError('');
                 return true;
             }
