@@ -64,7 +64,7 @@ const LeaveRequest: React.FC = () => {
     const handleEdit = (row: LeaveTableRow) => {
         const mapLabelToValue = (label: string) => {
             const cleanLabel = label.toLowerCase().trim();
-            
+
             if (cleanLabel.includes('health')) return 'healthCare';
             if (cleanLabel.includes('with pay') && !cleanLabel.includes('without')) return 'withPay';
             if (cleanLabel.includes('without')) return 'without';
@@ -74,7 +74,7 @@ const LeaveRequest: React.FC = () => {
             if (cleanLabel.includes('maternity')) return 'maternity';
             if (cleanLabel.includes('paternity')) return 'paternity';
             if (cleanLabel.includes('medical')) return 'medical';
-            
+
             return cleanLabel;
         };
         setFormData((prev: any) => ({
@@ -162,7 +162,7 @@ const LeaveRequest: React.FC = () => {
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                                 </svg>
-                                ADD 
+                                ADD
                             </button>
                         </div>
                     </div>
@@ -171,9 +171,9 @@ const LeaveRequest: React.FC = () => {
                 {/* Table Container - Takes remaining space */}
                 <div className="flex-1 min-h-0">
                     <div className="bg-white rounded-xl shadow-lg h-full">
-                        <LeaveTable 
-                            data={tableData} 
-                            onEdit={handleEdit} 
+                        <LeaveTable
+                            data={tableData}
+                            onEdit={handleEdit}
                             onDelete={handleDelete}
                         />
                     </div>
