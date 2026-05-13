@@ -5,14 +5,11 @@ import { LeaveRequestType } from '../types/leave.types';
 import { config } from '../utils/config';
 import { LEAVE_TYPES, ATTACHMENT_REQUIRED_TYPES } from '../utils/leave.constants';
 import { calculateTotalLeaveDays, getTodayDate } from '../utils/leave.utils';
-<<<<<<< HEAD
-=======
 
 interface Approver {
     id: string;
     name: string;
 }
->>>>>>> 857ae332784d349bc7b398680065ed9f12890ad8
 
 export const useLeaveRequest = (initialStaffId: string) => {
     useEffect(() => {

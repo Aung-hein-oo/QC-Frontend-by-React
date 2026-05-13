@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-
-import React, { useState } from 'react';
-=======
 import React, { useState, useMemo } from 'react';
->>>>>>> 857ae332784d349bc7b398680065ed9f12890ad8
 import { User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
 import Header from '../components/profile/Header';
 import { useLeaveApprove } from '../hooks/useLeaveApprove';
