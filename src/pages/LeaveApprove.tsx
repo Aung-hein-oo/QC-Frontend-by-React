@@ -11,30 +11,30 @@ import { useModals } from '../hooks/useModals';
 import { getApproverScope } from '../utils/approverRules';
 
 const ReasonCell = ({ reason }: { reason: string }) => {
-  const [expanded, setExpanded] = useState(false);
-  const maxLength = 100;
-  const needsTruncation = reason && reason.length > maxLength;
-  
-  if (!reason) return <span className="text-gray-400">-</span>;
-  
-  return (
-    <div className="flex items-start gap-2">
-      <div className="flex-1">
-        <span className="text-sm text-gray-600 break-words">
-          {expanded ? reason : `${reason.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
-        </span>
-      </div>
-      {needsTruncation && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1"
-        >
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          <span>{expanded ? 'See less' : 'See more'}</span>
-        </button>
-      )}
-    </div>
-  );
+    const [expanded, setExpanded] = useState(false);
+    const maxLength = 100;
+    const needsTruncation = reason && reason.length > maxLength;
+
+    if (!reason) return <span className="text-gray-400">-</span>;
+
+    return (
+        <div className="flex items-start gap-2">
+            <div className="flex-1">
+                <span className="text-sm text-gray-600 break-words">
+                    {expanded ? reason : `${reason.slice(0, maxLength)}${needsTruncation ? '...' : ''}`}
+                </span>
+            </div>
+            {needsTruncation && (
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="flex-shrink-0 text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center gap-1"
+                >
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    <span>{expanded ? 'See less' : 'See more'}</span>
+                </button>
+            )}
+        </div>
+    );
 };
 
 const LeaveApprove: React.FC = () => {

@@ -27,7 +27,10 @@ const AttendanceHomepage = () => {
     updatingId,
     updatingTypeId,
     availableTypes,
-    canEditRecord
+    canEditRecord,
+    updateAttendanceRemark,
+    updatingRemarkId
+
   } = useAttendance();
 
   const { 
@@ -252,6 +255,8 @@ const AttendanceHomepage = () => {
               availableTypes={availableTypes}
               defaultDateFilter={getDefaultDateFilter()}
               onFilterChange={setCurrentFilters}
+              onUpdateRemark={updateAttendanceRemark}
+              updatingRemarkId={updatingRemarkId}
             />
           </div>
           

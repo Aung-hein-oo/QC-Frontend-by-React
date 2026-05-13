@@ -8,6 +8,8 @@ import { AttendanceTableHeader } from './AttendanceTableHeader';
 import { StatusUpdateDropdown } from './StatusUpdateDropdown';
 import { AttendanceTypeUpdateDropdown } from './AttendanceTypeUpdateDropdown';
 import { AttendanceTypeBadge } from './AttendanceTypeBadge';
+import { RemarkItem } from './Remark';
+import { InlineRemarkEdit } from '../attendance/InlineRemarkEdit';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
@@ -25,6 +27,8 @@ type AttendanceTableProps = {
   fixedHeader?: boolean;
   defaultDateFilter?: string;
   onFilterChange?: (filters: any) => void;
+  onUpdateRemark?: (recordId: string, newRemark: string) => Promise<{ success: boolean; error?: string }>;
+  updatingRemarkId?: string | null;
 };
 
 type FilterState = {
@@ -40,9 +44,9 @@ const RemarkCell = ({ remark }: { remark: string }) => {
   const [expanded, setExpanded] = useState(false);
   const maxLength = 100;
   const needsTruncation = remark && remark.length > maxLength;
-  
+
   if (!remark || remark === '-') return <span className="text-gray-400">-</span>;
-  
+
   return (
     <div className="flex items-start gap-2">
       <div className="flex-1">
@@ -73,7 +77,7 @@ const ReadOnlyStatus = ({ status }: { status?: string }) => {
       default: return 'bg-gray-100 text-gray-600';
     }
   };
-  
+
   return (
     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
       {status || 'Not Marked'}
@@ -85,9 +89,9 @@ const ReadOnlyType = ({ type }: { type?: string }) => (
   <AttendanceTypeBadge type={type || '-'} />
 );
 
-export const AttendanceTable = ({ 
-  attendance, 
-  showStaffInfo, 
+export const AttendanceTable = ({
+  attendance,
+  showStaffInfo,
   itemsPerPage: initialItemsPerPage = 25,
   currentStaff,
   canEditRecord,
@@ -99,10 +103,15 @@ export const AttendanceTable = ({
   availableTypes = [],
   defaultDateFilter,
   onFilterChange,
+  onUpdateRemark,
+  updatingRemarkId: externalUpdatingRemarkId,
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
-  
+  const [localUpdatingRemarkId, setLocalUpdatingRemarkId] = useState<string | null>(null);
+  const [editingRemarkId, setEditingRemarkId] = useState<string | null>(null);
+  const updatingRemarkId = externalUpdatingRemarkId !== undefined ? externalUpdatingRemarkId : localUpdatingRemarkId;
+
   // Initialize filters with default date filter if provided
   const [filters, setFilters] = useState<FilterState>(() => {
     if (defaultDateFilter) {
@@ -110,7 +119,7 @@ export const AttendanceTable = ({
     }
     return {};
   });
-  
+
   const [localUpdatingId, setLocalUpdatingId] = useState<string | null>(null);
   const [localUpdatingTypeId, setLocalUpdatingTypeId] = useState<string | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
@@ -123,7 +132,7 @@ export const AttendanceTable = ({
   const sortedAttendance = [...attendance].sort((a, b) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
-  
+
   const filteredRecords = attendance.filter(record => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
@@ -163,7 +172,7 @@ export const AttendanceTable = ({
   };
 
   const hasFilters = Object.values(filters).some(Boolean);
-  
+
   const checkCanEdit = (record: AttendanceRecord): boolean => {
     return canEditRecord ? canEditRecord(record) : false;
   };
@@ -181,10 +190,10 @@ export const AttendanceTable = ({
     }
 
     setLocalUpdatingId(recordId);
-    
+
     try {
       const result = await onUpdateStatus(recordId, newStatus);
-      
+
       if (result.success) {
         showNotification(`✓ Status updated to "${newStatus}"`, 'success');
         // await onStatusUpdate?.();
@@ -212,10 +221,10 @@ export const AttendanceTable = ({
     }
 
     setLocalUpdatingTypeId(recordId);
-    
+
     try {
       const result = await onUpdateType(recordId, newType);
-      
+
       if (result.success) {
         showNotification(`✓ Type updated to "${newType}"`, 'success');
         // await onStatusUpdate?.();
@@ -230,6 +239,36 @@ export const AttendanceTable = ({
     }
   };
 
+  const updateRemark = async (recordId: string, newRemark: string) => {
+    const recordToUpdate = attendance.find(r => String(r.id) === recordId);
+    if (recordToUpdate && !checkCanEdit(recordToUpdate)) {
+      showNotification('You do not have permission to edit this record', 'error');
+      return;
+    }
+
+    if (!onUpdateRemark) {
+      showNotification('Update remark function not provided', 'error');
+      return;
+    }
+
+    setLocalUpdatingRemarkId(recordId);
+
+    try {
+      const result = await onUpdateRemark(recordId, newRemark);
+
+      if (result.success) {
+        showNotification('✓ Remark updated successfully', 'success');
+        setEditingRemarkId(null);
+      } else {
+        showNotification(result.error || 'Failed to update remark', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to update remark. Please try again.', 'error');
+    } finally {
+      setLocalUpdatingRemarkId(null);
+    }
+  };
+
   if (!attendance.length) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -238,7 +277,7 @@ export const AttendanceTable = ({
       </div>
     );
   }
-  
+
   return (
     <div className="h-full flex flex-col">
       {hasFilters && (
@@ -252,7 +291,7 @@ export const AttendanceTable = ({
           </button>
         </div>
       )}
-      
+
       <div className="flex-1 min-h-0 overflow-auto">
         <div className="min-w-full inline-block align-middle">
           <table className="min-w-full">
@@ -264,7 +303,7 @@ export const AttendanceTable = ({
               sticky={false}
               defaultDateFilter={defaultDateFilter}
             />
-            
+
             <tbody className="divide-y divide-gray-100">
               {paginatedRecords.length === 0 ? (
                 <tr>
@@ -317,7 +356,15 @@ export const AttendanceTable = ({
                         )}
                       </td>
                       <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
-                        <RemarkCell remark={record.remark || '-'} />
+                        <InlineRemarkEdit
+                          remark={record.remark || ''}
+                          isEditing={editingRemarkId === String(record.id)}
+                          isUpdating={updatingRemarkId === String(record.id)}
+                          onSave={(newRemark) => updateRemark(String(record.id), newRemark)}
+                          onCancel={() => setEditingRemarkId(null)}
+                          onEdit={() => setEditingRemarkId(String(record.id))}
+                          
+                        />
                       </td>
                     </tr>
                   );
@@ -327,7 +374,7 @@ export const AttendanceTable = ({
           </table>
         </div>
       </div>
-      
+
       {attendance.length > 0 && (
         <div className="flex-shrink-0 border-t bg-white">
           <Pagination
