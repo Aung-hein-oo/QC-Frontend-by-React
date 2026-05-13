@@ -8,6 +8,7 @@ import { AttendanceTableHeader } from './AttendanceTableHeader';
 import { StatusUpdateDropdown } from './StatusUpdateDropdown';
 import { AttendanceTypeUpdateDropdown } from './AttendanceTypeUpdateDropdown';
 import { AttendanceTypeBadge } from './AttendanceTypeBadge';
+import { RemarkItem } from './Remark';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
@@ -40,9 +41,9 @@ const RemarkCell = ({ remark }: { remark: string }) => {
   const [expanded, setExpanded] = useState(false);
   const maxLength = 100;
   const needsTruncation = remark && remark.length > maxLength;
-  
+
   if (!remark || remark === '-') return <span className="text-gray-400">-</span>;
-  
+
   return (
     <div className="flex items-start gap-2">
       <div className="flex-1">
@@ -73,7 +74,7 @@ const ReadOnlyStatus = ({ status }: { status?: string }) => {
       default: return 'bg-gray-100 text-gray-600';
     }
   };
-  
+
   return (
     <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
       {status || 'Not Marked'}
@@ -85,9 +86,9 @@ const ReadOnlyType = ({ type }: { type?: string }) => (
   <AttendanceTypeBadge type={type || '-'} />
 );
 
-export const AttendanceTable = ({ 
-  attendance, 
-  showStaffInfo, 
+export const AttendanceTable = ({
+  attendance,
+  showStaffInfo,
   itemsPerPage: initialItemsPerPage = 25,
   currentStaff,
   canEditRecord,
@@ -102,7 +103,7 @@ export const AttendanceTable = ({
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
-  
+
   // Initialize filters with default date filter if provided
   const [filters, setFilters] = useState<FilterState>(() => {
     if (defaultDateFilter) {
@@ -110,7 +111,7 @@ export const AttendanceTable = ({
     }
     return {};
   });
-  
+
   const [localUpdatingId, setLocalUpdatingId] = useState<string | null>(null);
   const [localUpdatingTypeId, setLocalUpdatingTypeId] = useState<string | null>(null);
   const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
@@ -123,7 +124,7 @@ export const AttendanceTable = ({
   const sortedAttendance = [...attendance].sort((a, b) => {
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
-  
+
   const filteredRecords = attendance.filter(record => {
     return Object.entries(filters).every(([key, value]) => {
       if (!value) return true;
@@ -163,7 +164,7 @@ export const AttendanceTable = ({
   };
 
   const hasFilters = Object.values(filters).some(Boolean);
-  
+
   const checkCanEdit = (record: AttendanceRecord): boolean => {
     return canEditRecord ? canEditRecord(record) : false;
   };
@@ -181,10 +182,10 @@ export const AttendanceTable = ({
     }
 
     setLocalUpdatingId(recordId);
-    
+
     try {
       const result = await onUpdateStatus(recordId, newStatus);
-      
+
       if (result.success) {
         showNotification(`✓ Status updated to "${newStatus}"`, 'success');
         // await onStatusUpdate?.();
@@ -212,10 +213,10 @@ export const AttendanceTable = ({
     }
 
     setLocalUpdatingTypeId(recordId);
-    
+
     try {
       const result = await onUpdateType(recordId, newType);
-      
+
       if (result.success) {
         showNotification(`✓ Type updated to "${newType}"`, 'success');
         // await onStatusUpdate?.();
@@ -238,7 +239,7 @@ export const AttendanceTable = ({
       </div>
     );
   }
-  
+
   return (
     <div className="h-full flex flex-col">
       {hasFilters && (
@@ -252,7 +253,7 @@ export const AttendanceTable = ({
           </button>
         </div>
       )}
-      
+
       <div className="flex-1 min-h-0 overflow-auto">
         <div className="min-w-full inline-block align-middle">
           <table className="min-w-full">
@@ -264,7 +265,7 @@ export const AttendanceTable = ({
               sticky={false}
               defaultDateFilter={defaultDateFilter}
             />
-            
+
             <tbody className="divide-y divide-gray-100">
               {paginatedRecords.length === 0 ? (
                 <tr>
@@ -317,7 +318,20 @@ export const AttendanceTable = ({
                         )}
                       </td>
                       <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
-                        <RemarkCell remark={record.remark || '-'} />
+                        <div className="flex items-center gap-2">
+                          {/* Always show the current remark text */}
+                          <RemarkCell remark={record.remark || '-'} />
+
+                          {/* Show the edit action if user has permission */}
+                          {canEdit && (
+                            <RemarkItem
+                            recordId={String(record.id)}
+                            isAdmin={canEdit}
+                            isUpdating={updatingTypeId === String(record.id)}
+                            staffId={record.staff_id}
+                          />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -327,7 +341,7 @@ export const AttendanceTable = ({
           </table>
         </div>
       </div>
-      
+
       {attendance.length > 0 && (
         <div className="flex-shrink-0 border-t bg-white">
           <Pagination
