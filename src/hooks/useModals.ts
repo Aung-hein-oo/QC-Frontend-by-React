@@ -18,6 +18,7 @@ interface SuccessModalState {
   message?: string;
   action?: string;
   actionColor: string;
+  customMessage: string;
 }
 
 export const useModals = () => {
@@ -35,8 +36,9 @@ export const useModals = () => {
     isOpen: false,
     title: '',
     message: '',
-    action: '',
+    action: '' as string,
     actionColor: 'emerald',
+    customMessage: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +80,8 @@ export const useModals = () => {
     title: string,
     message?: string,
     action?: string,
-    actionColor: string = 'emerald'
+    actionColor: string = 'emerald',
+    customMessage?: string
   ) => {
     setSuccessModal({
       isOpen: true,
@@ -86,6 +89,7 @@ export const useModals = () => {
       message,
       action,
       actionColor,
+      customMessage : customMessage || '',
     });
   }, []);
 

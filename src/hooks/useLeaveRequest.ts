@@ -54,7 +54,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
             
             if (response.ok) {
                 const data = await response.json();
-                // Transform the response into approvers array
                 const approversList: Approver[] = [];
                 
                 if (data.division_head) {

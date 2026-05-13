@@ -1,5 +1,3 @@
-// components/leaveform/LeaveForm.tsx
-
 import React from 'react';
 import { LEAVE_TYPES, ATTACHMENT_REQUIRED_TYPES } from '../../utils/leave.constants';
 import { LeaveRequestType } from '../../types/leave.types';
@@ -23,10 +21,12 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
     approvers,
     loadingApprovers = false,
 }) => {
+    // Get the list of selected approver IDs from formData
+    const selectedApproverIds = formData.approved_by || [];
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Staff ID */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Staff ID
@@ -72,7 +72,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     </select>
                 </div>
 
-                {/* Start Date */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Start Date *
@@ -87,7 +86,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     />
                 </div>
 
-                {/* End Date */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         End Date *
@@ -103,7 +101,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     />
                 </div>
 
-                {/* Leave Status */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Leave Status *
@@ -134,7 +131,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     </div>
                 </div>
 
-                {/* Total Leave Day */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Total Leave Day
@@ -147,7 +143,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                     />
                 </div>
 
-                {/* Approver - Dynamic from API + Hardcoded User */}
                 <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Approver(s) *
@@ -158,40 +153,47 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                             <span className="text-sm">Loading approvers...</span>
                         </div>
                     ) : (
-                        <div className="flex flex-wrap items-center gap-6">
-                            {/* Hardcoded Approver: Kay Thi Khine */}
-                            <label className="flex items-center gap-2 text-sm text-slate-600 font-semibold">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.approved_by.includes('kay-thi-khine-static')}
-                                    onChange={(e) => onCheckboxChange('kay-thi-khine-static', e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                                />
-                                Kay Thi Khine
-                            </label>
-
-                            {/* Dynamic Approvers from API */}
-                            {approvers.map(approver => (
-                                <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600 font-semibold">
+                        <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-6">
+                                {/* Hardcoded approver - Kay Thi Khine */}
+                                <label className="flex items-center gap-2 text-sm text-slate-600">
                                     <input
                                         type="checkbox"
-                                        checked={formData.approved_by.includes(approver.id)}
-                                        onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
+                                        checked={selectedApproverIds.includes('kay_thi_khine')}
+                                        onChange={(e) => onCheckboxChange('kay_thi_khine', e.target.checked)}
                                         className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                     />
-                                    {approver.name}
+                                    <span className="font-semibold">Kay Thi Khine</span>
                                 </label>
-                            ))}
 
-                            {/* Fallback if no dynamic approvers and Kay Thi Khine isn't enough */}
-                            {approvers.length === 0 && !formData.approved_by.includes('kay-thi-khine-static') && (
-                                <p className="text-sm text-amber-600">Admin will approve.</p>
+                                {/* Dynamic approvers from API */}
+                                {approvers.map(approver => (
+                                    <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedApproverIds.includes(approver.id)}
+                                            onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="font-semibold">{approver.name}</span>
+                                    </label>
+                                ))}
+
+                                {approvers.length === 0 && (
+                                    <p className="text-sm text-amber-600">Admin will approve.</p>
+                                )}
+                            </div>
+                            
+                            {/* Validation hint */}
+                            {selectedApproverIds.length === 0 && !loadingApprovers && (
+                                <p className="text-xs text-amber-600 mt-1">
+                                    ⚠️ Please select at least one approver
+                                </p>
                             )}
                         </div>
                     )}
                 </div>
 
-                {/* Applied Date */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                         Applied Date
@@ -206,7 +208,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                 </div>
             </div>
 
-            {/* Reason */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                     Reason for Leave *
@@ -222,7 +223,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                 />
             </div>
 
-            {/* Attachment */}
             {ATTACHMENT_REQUIRED_TYPES.includes(formData.leave_type) && (
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
