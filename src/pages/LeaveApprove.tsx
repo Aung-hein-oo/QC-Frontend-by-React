@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 
 import React, { useState } from 'react';
+=======
+import React, { useState, useMemo } from 'react';
+>>>>>>> 857ae332784d349bc7b398680065ed9f12890ad8
 import { User, Calendar, Inbox, ChevronDown, ChevronUp } from 'lucide-react';
 import Header from '../components/profile/Header';
 import { useLeaveApprove } from '../hooks/useLeaveApprove';
@@ -47,10 +51,21 @@ const LeaveApprove: React.FC = () => {
     
     const { confirmModal, successModal, showConfirm, closeConfirm, showSuccess, closeSuccess } = useModals();
 
-    const totalItems = leaveList.length;
+    // Sort leaveList from latest to oldest (newest first)
+    const sortedLeaveList = useMemo(() => {
+        return [...leaveList].sort((a, b) => {
+            // Assuming there's a date field like apply_date, created_at, or updated_at
+            // Use the most appropriate date field from your data
+            const dateA = new Date(a.apply_date || a.created_at || a.req_leave_date_from);
+            const dateB = new Date(b.apply_date || b.created_at || b.req_leave_date_from);
+            return dateB.getTime() - dateA.getTime(); // Descending order (newest first)
+        });
+    }, [leaveList]);
+
+    const totalItems = sortedLeaveList.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedData = leaveList.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedData = sortedLeaveList.slice(startIndex, startIndex + itemsPerPage);
 
     const handleAction = async () => {
         if (!selectedRow || !selectedRow.leave_form_id) return;

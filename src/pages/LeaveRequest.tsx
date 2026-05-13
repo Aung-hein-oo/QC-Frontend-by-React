@@ -16,6 +16,8 @@ const LeaveRequest: React.FC = () => {
     const {
         formData,
         error,
+        approvers,           
+        loadingApprovers,    
         handleInputChange,
         handleCheckboxChange,
         handleFileChange,
@@ -28,18 +30,26 @@ const LeaveRequest: React.FC = () => {
     const [selectedRow, setSelectedRow] = useState<LeaveTableRow | null>(null);
     const [showDelete, setShowDelete] = useState(false);
 
-    const tableData: LeaveTableRow[] = leaveRecords.map((item) => ({
-        id: item.leave_form_id.toString(),
-        staffNo: item.staff_id,
-        staffName: staff?.staff_name || 'My Record',
-        leaveType: item.leave_type,
-        fromDate: item.req_leave_date_from,
-        toDate: item.req_leave_date_to,
-        reason: item.reason,
-        status: item.form_status,
-        total: item.total_leave_day,
-        approved_by: item.approved_by || [],
-    }));
+    // Sort records by ID in descending order (latest first)
+    const tableData: LeaveTableRow[] = leaveRecords
+        .map((item) => ({
+            id: item.leave_form_id.toString(),
+            staffNo: item.staff_id,
+            staffName: staff?.staff_name || 'My Record',
+            leaveType: item.leave_type,
+            fromDate: item.req_leave_date_from,
+            toDate: item.req_leave_date_to,
+            reason: item.reason,
+            status: item.form_status,
+            total: item.total_leave_day,
+            approved_by: item.approved_by || [],
+        }))
+        .sort((a, b) => {
+            // Sort by ID in descending order (latest first)
+            const idA = parseInt(a.id);
+            const idB = parseInt(b.id);
+            return idB - idA;
+        });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -187,6 +197,8 @@ const LeaveRequest: React.FC = () => {
                 error={error}
                 title="Submit Leave Request"
                 submitButtonText="Submit"
+                approvers={approvers}
+                loadingApprovers={loadingApprovers}
             />
 
             <LeaveModal
@@ -200,6 +212,8 @@ const LeaveRequest: React.FC = () => {
                 error={error}
                 title="Update Leave Request"
                 submitButtonText="Update"
+                approvers={approvers}
+                loadingApprovers={loadingApprovers}
             />
 
             <DeleteModal

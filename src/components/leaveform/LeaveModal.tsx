@@ -1,3 +1,5 @@
+// components/leaveform/LeaveModal.tsx
+
 import React from 'react';
 import { X, Send } from 'lucide-react';
 import { LeaveForm } from './LeaveForm';
@@ -14,6 +16,8 @@ interface LeaveModalProps {
     error: string;
     title: string;
     submitButtonText: string;
+    approvers: Array<{ id: string; name: string }>;
+    loadingApprovers?: boolean;
 }
 
 export const LeaveModal: React.FC<LeaveModalProps> = ({
@@ -26,7 +30,9 @@ export const LeaveModal: React.FC<LeaveModalProps> = ({
     onFileChange,
     error,
     title,
-    submitButtonText
+    submitButtonText,
+    approvers,
+    loadingApprovers = false
 }) => {
     if (!isOpen) return null;
 
@@ -61,6 +67,8 @@ export const LeaveModal: React.FC<LeaveModalProps> = ({
                             onInputChange={onInputChange}
                             onCheckboxChange={onCheckboxChange}
                             onFileChange={onFileChange}
+                            approvers={approvers}
+                            loadingApprovers={loadingApprovers}
                         />
 
                         {/* Buttons */}
