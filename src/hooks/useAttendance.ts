@@ -15,6 +15,7 @@ export const useAttendance = () => {
   const [updatingTypeId, setUpdatingTypeId] = useState<string | null>(null);
   const [availableTypes, setAvailableTypes] = useState<string[]>([]);
   const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [updatingRemarkId, setUpdatingRemarkId] = useState<string | null>(null);
   
     const getAuth = () => {
       const token = localStorage.getItem('token');
@@ -175,6 +176,44 @@ export const useAttendance = () => {
     }
   }, []);
 
+  const updateAttendanceRemark = useCallback(async (recordId: string, newRemark: string) => {
+    const { token } = getAuth();
+    if (!token) return { success: false, error: 'Not authenticated' };
+
+    setUpdatingRemarkId(recordId);
+
+    try {
+      const res = await fetch(`${config.apiUrl}/attendance/${recordId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ remark: newRemark })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        return { success: false, error: errorData.message || 'Failed to update remark' };
+      }
+
+      // Local update
+      setAllAttendance(prev =>
+        prev.map(r =>
+          String(r.id) === recordId
+            ? { ...r, remark: newRemark }
+            : r
+        )
+      );
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    } finally {
+      setUpdatingRemarkId(null);
+    }
+  }, []);
+
   useEffect(() => {
     fetchAttendanceOptions();
     fetchData();
@@ -200,8 +239,10 @@ export const useAttendance = () => {
     refreshAttendance,
     updateAttendanceStatus,
     updateAttendanceType,
+    updateAttendanceRemark,
     updatingId,
     updatingTypeId,
+    updatingRemarkId,
     availableTypes,
     availableStatuses,
     canEditRecord,

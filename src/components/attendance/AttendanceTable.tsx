@@ -9,6 +9,7 @@ import { StatusUpdateDropdown } from './StatusUpdateDropdown';
 import { AttendanceTypeUpdateDropdown } from './AttendanceTypeUpdateDropdown';
 import { AttendanceTypeBadge } from './AttendanceTypeBadge';
 import { RemarkItem } from './Remark';
+import { InlineRemarkEdit } from '../attendance/InlineRemarkEdit';
 
 type AttendanceTableProps = {
   attendance: AttendanceRecord[];
@@ -26,6 +27,8 @@ type AttendanceTableProps = {
   fixedHeader?: boolean;
   defaultDateFilter?: string;
   onFilterChange?: (filters: any) => void;
+  onUpdateRemark?: (recordId: string, newRemark: string) => Promise<{ success: boolean; error?: string }>;
+  updatingRemarkId?: string | null;
 };
 
 type FilterState = {
@@ -100,9 +103,14 @@ export const AttendanceTable = ({
   availableTypes = [],
   defaultDateFilter,
   onFilterChange,
+  onUpdateRemark,
+  updatingRemarkId: externalUpdatingRemarkId,
 }: AttendanceTableProps) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialItemsPerPage);
+  const [localUpdatingRemarkId, setLocalUpdatingRemarkId] = useState<string | null>(null);
+  const [editingRemarkId, setEditingRemarkId] = useState<string | null>(null);
+  const updatingRemarkId = externalUpdatingRemarkId !== undefined ? externalUpdatingRemarkId : localUpdatingRemarkId;
 
   // Initialize filters with default date filter if provided
   const [filters, setFilters] = useState<FilterState>(() => {
@@ -231,6 +239,36 @@ export const AttendanceTable = ({
     }
   };
 
+  const updateRemark = async (recordId: string, newRemark: string) => {
+    const recordToUpdate = attendance.find(r => String(r.id) === recordId);
+    if (recordToUpdate && !checkCanEdit(recordToUpdate)) {
+      showNotification('You do not have permission to edit this record', 'error');
+      return;
+    }
+
+    if (!onUpdateRemark) {
+      showNotification('Update remark function not provided', 'error');
+      return;
+    }
+
+    setLocalUpdatingRemarkId(recordId);
+
+    try {
+      const result = await onUpdateRemark(recordId, newRemark);
+
+      if (result.success) {
+        showNotification('✓ Remark updated successfully', 'success');
+        setEditingRemarkId(null);
+      } else {
+        showNotification(result.error || 'Failed to update remark', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to update remark. Please try again.', 'error');
+    } finally {
+      setLocalUpdatingRemarkId(null);
+    }
+  };
+
   if (!attendance.length) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -318,20 +356,15 @@ export const AttendanceTable = ({
                         )}
                       </td>
                       <td className="px-6 py-3 min-w-[250px] max-w-[300px]">
-                        <div className="flex items-center gap-2">
-                          {/* Always show the current remark text */}
-                          <RemarkCell remark={record.remark || '-'} />
-
-                          {/* Show the edit action if user has permission */}
-                          {canEdit && (
-                            <RemarkItem
-                            recordId={String(record.id)}
-                            isAdmin={canEdit}
-                            isUpdating={updatingTypeId === String(record.id)}
-                            staffId={record.staff_id}
-                          />
-                          )}
-                        </div>
+                        <InlineRemarkEdit
+                          remark={record.remark || ''}
+                          isEditing={editingRemarkId === String(record.id)}
+                          isUpdating={updatingRemarkId === String(record.id)}
+                          onSave={(newRemark) => updateRemark(String(record.id), newRemark)}
+                          onCancel={() => setEditingRemarkId(null)}
+                          onEdit={() => setEditingRemarkId(String(record.id))}
+                          
+                        />
                       </td>
                     </tr>
                   );
