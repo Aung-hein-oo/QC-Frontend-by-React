@@ -31,7 +31,6 @@ const LeaveBalanceTable: React.FC<LeaveBalanceTableProps> = ({
           <thead className="bg-blue-600 text-white">
             <tr>
               <th className="p-3 text-left">Leave Type</th>
-              <th className="p-3 text-center">Previous</th>
               <th className="p-3 text-center">Entitle</th>
               <th className="p-3 text-center">Taken</th>
               <th className="p-3 text-center">Balance</th>
@@ -41,7 +40,6 @@ const LeaveBalanceTable: React.FC<LeaveBalanceTableProps> = ({
             {data.map((item, index) => (
               <tr key={index} className="border-t hover:bg-gray-50 transition">
                 <td className="p-3 font-medium text-gray-700">{item.leaveType}</td>
-                <td className="p-3 text-center text-gray-600">{item.previous}</td>
                 <td className="p-3 text-center text-gray-600">{item.entitle}</td>
                 <td className="p-3 text-center">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${

@@ -10,7 +10,7 @@ export const useAttendance = () => {
   const [allStaffList, setAllStaffList] = useState<StaffMember[]>([]);
   const [staff, setStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string>(''); // Start with empty string (no filter)
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [updatingTypeId, setUpdatingTypeId] = useState<string | null>(null);
   const [availableTypes, setAvailableTypes] = useState<string[]>([]);
