@@ -26,7 +26,6 @@ export const LeaveModal: React.FC<LeaveModalProps> = ({
     onSubmit,
     formData,
     onInputChange,
-    onCheckboxChange,
     onFileChange,
     error,
     title,
@@ -65,7 +64,6 @@ export const LeaveModal: React.FC<LeaveModalProps> = ({
                         <LeaveForm
                             formData={formData}
                             onInputChange={onInputChange}
-                            onCheckboxChange={onCheckboxChange}
                             onFileChange={onFileChange}
                             approvers={approvers}
                             loadingApprovers={loadingApprovers}

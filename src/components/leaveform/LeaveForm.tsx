@@ -5,7 +5,6 @@ import { LeaveRequestType } from '../../types/leave.types';
 interface LeaveFormProps {
     formData: LeaveRequestType;
     onInputChange: (e: React.ChangeEvent<any>) => void;
-    onCheckboxChange: (approverId: string, checked: boolean) => void;
     onFileChange: (fileName: string) => void;
     approvers: Array<{ id: string; name: string }>;
     loadingApprovers?: boolean;
@@ -16,7 +15,6 @@ interface LeaveFormProps {
 export const LeaveForm: React.FC<LeaveFormProps> = ({
     formData,
     onInputChange,
-    onCheckboxChange,
     onFileChange,
     approvers,
     loadingApprovers = false,
@@ -159,8 +157,8 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                                 <label className="flex items-center gap-2 text-sm text-slate-600">
                                     <input
                                         type="checkbox"
-                                        checked={selectedApproverIds.includes('kay_thi_khine')}
-                                        onChange={(e) => onCheckboxChange('kay_thi_khine', e.target.checked)}
+                                        checked={true}
+                                        readOnly
                                         className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                     />
                                     <span className="font-semibold">Kay Thi Khine</span>
@@ -171,8 +169,8 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                                     <label key={approver.id} className="flex items-center gap-2 text-sm text-slate-600">
                                         <input
                                             type="checkbox"
-                                            checked={selectedApproverIds.includes(approver.id)}
-                                            onChange={(e) => onCheckboxChange(approver.id, e.target.checked)}
+                                            checked={true}
+                                            readOnly
                                             className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
                                         />
                                         <span className="font-semibold">{approver.name}</span>
@@ -183,13 +181,6 @@ export const LeaveForm: React.FC<LeaveFormProps> = ({
                                     <p className="text-sm text-amber-600">Admin will approve.</p>
                                 )}
                             </div>
-                            
-                            {/* Validation hint */}
-                            {selectedApproverIds.length === 0 && !loadingApprovers && (
-                                <p className="text-xs text-amber-600 mt-1">
-                                    ⚠️ Please select at least one approver
-                                </p>
-                            )}
                         </div>
                     )}
                 </div>

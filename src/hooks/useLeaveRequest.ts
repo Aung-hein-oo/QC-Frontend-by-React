@@ -129,11 +129,6 @@ export const useLeaveRequest = (initialStaffId: string) => {
             return false;
         }
 
-        if (formData.approved_by.length === 0) {
-            setError('Please select at least one approver');
-            return false;
-        }
-
         return true;
     };
 
